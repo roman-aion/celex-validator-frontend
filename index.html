@@ -1,0 +1,2947 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  
+  <!-- Version 1.0.3 - 2025-10-27 -->
+  
+  <meta charset="UTF-8" />
+  <title>CAT draft&check</title>
+  <link rel="icon" href="favicon.png" type="image/png">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>	
+		
+	.clickable-row-ref:hover {
+	  color: #b0102b !important;
+	  font-weight: bold;
+	}
+	
+	/* CELEX Lookup Dropdown */
+	.celex-dropdown {
+	  position: absolute;
+	  top: 100%;
+	  left: 0;
+	  right: 0;
+	  background: white;
+	  border: 1px solid #3d4b57;
+	  border-radius: 4px;
+	  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	  z-index: 1000;
+	  max-height: 200px;
+	  overflow-y: auto;
+	}
+
+	.celex-option {
+	  padding: 8px 10px;
+	  cursor: pointer;
+	  border-bottom: 1px solid #eee;
+	  display: flex;
+	  justify-content: space-between;
+	  align-items: center;
+	  font-family: 'Calibri', sans-serif;
+	  font-size: 14px;
+	}
+
+	.celex-option:hover {
+	  background-color: #f0f8ff;
+	}
+
+	.celex-option:last-child {
+	  border-bottom: none;
+	}
+
+	.celex-alias {
+	  font-weight: bold;
+	  color: #145280;
+	}
+
+	.celex-value {
+	  color: #666;
+	  //font-family: monospace;
+	  font-size: 13px;
+	}
+
+	.celex-add-btn {
+	  background: #3cab6e;
+	  color: white;
+	  border: none;
+	  border-radius: 3px;
+	  padding: 2px 6px;
+	  font-size: 11px;
+	  cursor: pointer;
+	  margin-left: 8px;
+	}
+
+	.celex-add-btn:hover {
+	  background: #2a8c56;
+	  transform: scale(1.05);
+	}
+
+	#celexLookup:focus {
+	  outline: 1.5px solid #276796;
+	  box-shadow: 0 0 3px #276796;
+	  background-color: #edf1f5;
+	  border-radius: 4px;
+	}
+	
+	
+	/* --- Filter row base --- */
+	#data-table thead tr:nth-child(2) th,
+	#data-table thead tr:nth-child(2) td{	 
+	  background: var(--filter-bg, #f6f7f9);
+	  padding: 4px 8px;
+		}
+
+	/* keep the first column narrow */
+	#data-table thead tr:nth-child(2) th.pincol { width: 40px; }
+
+	/* --- Unpin-all button in filter row --- */
+	.btn-pinoff-all{
+	  -webkit-appearance: none;
+	  appearance: none;
+	  background: transparent;   /* avoids the “different bg” issue */
+	  border: 0;
+	  margin: 0;
+	  padding: 4px;              /* click target padding */
+	  width: 28px;               /* predictable size */
+	  height: 28px;
+	  border-radius: 6px;
+	  line-height: 0;
+	  display: inline-flex;
+	  align-items: center;
+	  justify-content: center;
+	  cursor: pointer;
+
+	 /* the SVG uses currentColor, so set a visible color */
+	  color: var(--filter-icon, #9CA3AF);      /* gray-400-ish; match your theme */
+	}
+
+	/* ensure the SVG doesn’t collapse */
+	.icon-pinoff-all{
+	  width: 18px;
+	  height: 18px;
+	  display: block;
+	}
+
+	/* hover / focus to match your other filter controls */
+	#data-table thead tr:nth-child(2) .btn-pinoff-all:hover{
+	  //background: var(--filter-hover, rgba(0,0,0,0.05));
+	  color: var(--filter-icon-hover, #4B5563);  /* gray-600-ish */
+	}
+	.btn-pinoff-all:focus-visible{
+	  outline: 2px solid var(--focus-ring, #3B82F6);
+	  outline-offset: 2px;
+	}	
+	
+	.scroll-body tbody tr:not(.pinned-row):hover {
+	  background-color: #f0f8ff; /* light blue-ish, change as needed */	 
+	}	
+		
+	.pinned-row {
+	  background-color: #defaf0 !important;	  
+	}	
+	
+	.pin-cell {
+	  text-align: center;	 
+	  vertical-align: center;
+	  cursor: pointer;	  
+	}
+	
+	/* duplicate rows (instant visual only) */
+	.dup-line { 
+	  background-color: #ffe5e5 !important; 
+	}	
+	
+	body { 
+	  font-family: 'Calibri', sans-serif;
+	  margin: 12px; 
+	  position: relative;
+	  background: #f8f9fa; 
+	}	
+    
+	.header {
+	  display: flex;
+	  align-items: center;
+	  justify-content: space-between;
+	  padding: 7px 15px;
+	  background-color: #3d4b57;
+	  border-left: 7px solid #3cab6e;
+	  border-radius: 4px;
+	  font-size: 26px;
+	  color: #d7d7db;
+	  font-weight: 700;	  
+	}
+	
+	.subtitle {
+	  font-size: 18px;
+	  font-weight: 600;	  
+	  margin-left: 12px;
+	}
+
+	.svg-button {
+	  background: none !important;	  
+	  border: none !important;
+	  padding: 4px;
+	  cursor: pointer;
+	  pointer-events: auto;
+	}
+
+	.svg-button svg {
+	  stroke: #e8e8eb;
+	  fill: none;
+	  background: none;
+	  border: none;
+	  width: 22px;
+	  height: 22px;
+	  stroke-width: 1.5;
+	}
+	
+	.svg-button:hover svg {
+	  stroke: #db8b27;
+	  transform: scale(1.2);
+	}		
+	
+	svg use[href="#icon-check"] {
+	  stroke: green;
+	  stroke-width: 2;
+	  fill: #cee0cc;
+	}
+	
+	svg use[href="#icon-toggle-on"] {
+	  stroke: #db8b27;
+	  stroke-width: 2;	  
+	}
+	
+	.vertical-divider {
+	  width: 1px;
+	  height: 24px;
+	  background-color: #e8e8eb;
+	  margin: 0 6px;
+	  align-self: center;
+	  opacity: 0.6;
+	  cursor: default;
+	}
+	
+	.vertical-dividerA {
+	  width: 1px;
+	  height: 35px; /* match button SVG height */
+	  background-color: #d3d3d3;
+	  display: inline-block;
+	  align-self: stretch; /* ensures vertical stretch in flex row */
+	  margin: 0 4px; /* spacing around divider */
+	}	
+
+   	.header-buttons .svg-button {
+	  pointer-events: auto;
+	  cursor: pointer;   
+	  flex-wrap: wrap;
+      gap: 12px;	
+	}	
+	
+	.top-controls {
+	  display: flex;
+	  justify-content: space-between;
+	  align-items: center;
+	  border-bottom: 1px solid #d3d3d3;
+	  padding-bottom: 10px;
+	  margin-bottom: 6px;
+	}
+
+    .button-group { 
+	  margin-bottom: 0px;
+	  margin-top: 15px;
+	  display: flex;
+	  align-items: center;
+	  gap: 6px; /* optional */	  
+	}
+	
+	.svg-buttonA {
+	  background: none !important;	  
+	  border: none !important;
+	  padding: 4px;
+	  cursor: pointer;
+	  pointer-events: auto;	  
+	}
+	
+	.svg-buttonA svg {
+	  stroke: #515152;
+	  fill: none;
+	  background: none;
+	  border: none;
+	  width: 26px;
+	  height: 26px;
+	  stroke-width: 1.5;
+	}
+
+	.svg-buttonA:hover svg {
+	  stroke: #db8b27;
+	  transform: scale(1.2);
+	}	    
+
+	#taskName::placeholder {
+	  color: #999999; 
+	  font-weight: 400;
+	  opacity: 1;     
+	}
+	
+    .result {	  
+	  margin-bottom: 20px; 
+	  margin-top: 20px; 
+	  font-size: 17px; 
+	  white-space: pre-wrap; 
+	  color: red;
+	}
+    
+	.ok { 
+	  color: green; 
+	}
+
+    .error { 
+	  color: #a11515; 
+	}
+	
+    .table-wrapper {
+	  overflow: visible !important;
+	  position: relative;
+	  z-index: 0;
+	  border: 1px solid #ccc;
+	  border-radius: 4px;
+	  background: #fdfdfd;
+	  overflow: hidden;
+	}
+
+	th { 
+	  background: #e3e4e6;		/* Table header */
+	  font-size: 16px; 
+	  letter-spacing: 0.8px;
+	  color: #162d52;
+	  text-align: center;
+	  height: 27px;
+	}  
+
+	#data-table thead tr:nth-child(2) {   /* Filter row */
+	  background-color: #f2f3f5 !important;
+	  height: 10px !important;	  
+	}
+	
+	#data-table th:first-child {
+	  border-top-left-radius: 3px;
+	}
+
+	#data-table th:last-child {
+	  border-top-right-radius: 3px;
+	}		
+
+	.filter-wrap {
+	  position: relative;
+	  display: flex;
+	  align-items: stretch;
+	  height: auto;
+	}
+	
+	.filter-input::placeholder {
+	  color: #6e6e6e;
+	  font-style: italic;
+	  font-size: 13px;
+	}
+
+	.filter-input {
+	  width: 98%;	
+	  padding: 2px 6px 2px 6px;
+	  font-size: 14px;
+	  font-weight: 500;
+	  color: #423e41;
+	  text-align: center;
+	  border: none;
+	  border-radius: 0;
+	  background-color: transparent;
+	  outline: none;
+	  box-shadow: none;
+	}
+
+	.filter-input:focus {
+	  outline: 1.5px solid #276796;
+	  box-shadow: 0 0 3px #276796;
+	  background-color: #edf1f5;	
+	  border-radius: 4px;	
+	  font-size: 15px;
+	}
+	
+	.filter-input.active {
+	  background-color: #ccdeeb !important;
+	  font-size: 14px;	
+	  height: 20px;
+	  font-weight: 600;
+	  border-radius: 4px;
+	}
+
+	.filter-clear {
+	  position: absolute;
+	  right: 6px;
+	  top: 10px;
+	  transform: translateY(-50%);
+	  color: #999;
+	  cursor: pointer;
+	  font-size: 19px;
+	  user-select: none;
+	}
+
+	.filter-clear:hover {
+	  color: #000;
+	}	
+	
+	.buttonB {	  
+	  transition: all 0.2s ease;
+	  padding: 6px 12px;	  	  
+	  cursor: pointer; 
+	  border: none;
+	}  	
+
+	button.small { /* Reset filters button */	 
+	  width: 40%;
+	  font-size: 11px; 
+	  color: #6e6e6e;	 
+	  letter-spacing: 0.3px;
+	  margin-top: 0;	
+	  border-radius: 4px;
+	  background: #f2f3f5;
+	}	
+	
+	button.small:hover {
+	  background: #f2f3f5 !important;
+	  transition: all 0.1s ease;
+	  color:#00080a;	 
+	  //transform: scale(1.05);	 
+	  font-weight: bold;
+	}	
+
+	td {
+	  font-size: 16px;	 
+	  vertical-align: middle;
+	  padding-left: 10px;
+	}
+	
+	td.row-index {	  
+	  text-align: center;	 
+	  color: #666;	  
+	  font-size: 13px;
+	  width: 20px;
+	}			
+	
+	td.celex {	
+	  position: relative;
+	  color: #3d4d59;
+	  font-weight: 600;
+	  padding-left: 20px;
+	}	
+	
+	.celex-text {
+	  display: inline-block;
+	  width: 100%;
+	  height: 100%;
+	  vertical-align: middle;	
+	  box-sizing: border-box;		
+	}
+	
+	.celex-text:focus {
+	  outline: none;
+	}
+
+	.celex:has(.celex-text:focus), td.subd:focus, td.points:focus {
+	  outline: 2px solid #276796 !important;
+	  box-shadow: 0 0 2px #276796 !important;	  	  	 
+	  border-radius: 4px;		
+	}
+	
+	.celex::after, .subd::after {
+	  content: "";
+	  position: absolute;
+	  top: 6px;        /* partial height */
+	  bottom: 6px;
+	  right: 0;
+	  width: 1px;
+	  background-color: #ddd;
+	  pointer-events: none;
+	}
+
+	td.subd {
+	  position: relative;
+	  color: #42995d; /* green */
+	  font-weight: 500;
+	  padding-left: 10px;
+	}
+	
+	td.points {	 
+	  position: relative;
+	  color: #07131c;
+	  padding-left: 10px;
+	  white-space: normal;
+	  word-wrap: break-word;
+	  overflow-wrap: anywhere;
+	}	
+	
+	table { 
+	  width: 100%; 
+	  border-collapse: collapse; 
+	}
+    
+	th, td { 
+	  padding: 4px 4px; 
+	  border-bottom: 1px solid #ccc; 
+	}	
+	
+	td.add-btn, td.clone-btn, td.delete-btn {
+	  text-align: center;
+	}	
+
+	.action-icon { /* add, clone, delete */
+	  width: 15px;
+	  height: 15px;
+	  stroke: #444;
+	  cursor: pointer;
+	  transition: transform 0.15s ease, stroke 0.15s ease;
+	}
+
+	.add-btn:hover .action-icon { 	/* Hover: add row (greenish) */
+	  stroke: #2a9d8f;
+	  transform: scale(1.4);
+	}
+	
+	.clone-btn:hover .action-icon { /* Hover: clone row (blue) */
+	  stroke: #1e88e5;
+	  transform: scale(1.2);
+	}
+	
+	.delete-btn:hover .action-icon { /* Hover: delete row (red) */
+	  stroke: #e53935;
+	  transform: scale(1.2);
+	} 
+	
+    .error-line { 
+	  background-color: #ffe5e5 !important; 
+	}
+
+    .conflict,td.celex.conflict, td.subd.conflict {
+	  color: red !important;
+	  font-weight: bold;
+	}
+
+    .row-controls { 
+	  display: flex; 
+	  gap: 8px; 
+	  justify-content: center; }
+
+    .add-btn, .clone-btn, .delete-btn {
+	  cursor: pointer; 
+	  font-weight: bold; 
+	  font-size: 14px;
+	}
+	
+    .add-btn { 
+	  color: #1aa142; 	 
+	  font-weight: 800; 
+	  padding-left: 10px;
+	}
+
+    .clone-btn { 
+	  color: #276796;	  
+	}
+
+	.delete-btn {
+	  color: #a11515; 
+	}   
+
+	.tooltip-box {
+	  position: absolute;
+	  background-color: #fff;
+	  color: #333;  
+	  padding: 8px 10px;
+	  border: 1px solid #276796;
+	  border-radius: 4px;
+	  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	  min-width: 280px;
+	  max-width: 360px;
+	  font-size: 16px;
+	  text-align: justify;
+	  line-height: 1.2;
+	  font-family: 'Calibri', sans-serif;
+	  z-index: 10000;
+	  pointer-events: none;
+	  visibility: hidden;
+	  opacity: 0;
+	  transition: opacity 0.15s ease;
+	}	
+
+	#data-body tr {
+	  position: relative;
+	  z-index: 1;
+	}
+
+	.scroll-container {
+	  border: 0.5px solid #ccc;
+	  border-radius: 4px;
+	  overflow: hidden;
+	}
+
+	.scroll-container > table,
+	.scroll-body table {
+	  width: 100%;
+	  border-collapse: collapse;
+	  table-layout: auto;
+	}
+
+	.scroll-body {
+	  max-height: 940px;
+	  min-height: 300px;
+	  overflow-y: auto;
+	  overflow-x: hidden;
+	  resize: vertical;
+	}	
+	
+	/* keep table semantics; just center content in that one cell */
+	#filterActions { 
+	  text-align: center;
+	  vertical-align: middle;      /* centers contents vertically in the cell */
+	}
+
+	/* center the CLEAR label perfectly and stop the old 40% width rule */
+	thead #filterActions .buttonB.small {
+	  width: 40px;                  /* cancels button.small { width:40% } */
+	  display: inline-flex;
+	  align-items: center;          /* vertical centering inside the button */
+	  justify-content: center;
+	  height: 22px;                 /* tweak if your header row is taller/shorter */
+	  line-height: 1;               /* no baseline sag */
+	  padding: 0 10px;
+	}
+
+	/* make only the top-right plus look smaller (rows stay as-is) */
+	#addTopBtn{
+	  width:20px;
+	  height:20px;
+	  padding:0;
+	  display:inline-flex;
+	  align-items:center;      /* vertical center */
+	  justify-content:center;  /* horizontal center */
+	  line-height:0;           /* remove baseline gap */
+	}
+	#addTopBtn .action-icon{
+	  width:16px; 
+	  height:16px;
+	  position:relative;
+	  top:2px;  
+	}
+	
+	#addTopBtn:hover .action-icon {
+	  transform: scale(1.15);       /* gentler hover than row buttons */
+	}
+
+
+  </style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+
+</head>
+
+<body>
+	
+	<!-- SVG ICONS : Copyright (c) for portions of Lucide are held by Cole Bemis 2013-2022 as part of Feather (MIT). All other copyright (c) for Lucide are held by Lucide Contributors 2022. Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies.
+
+	THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+	https://lucide.dev/license*/
+	-->
+	
+	<svg style="display: none;">
+		<symbol id="icon-pin-on" viewBox="0 0 24 24">
+		  <path d="M8.37658 15.6162L2.71973 21.273" stroke="#4a4848" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+		  <path d="M11.6943 6.64169L10.1334 8.20258C10.0061 8.3299 9.9424 8.39357 9.86986 8.44415C9.80548 8.48905 9.73604 8.52622 9.66297 8.55488C9.58065 8.58717 9.49236 8.60482 9.3158 8.64014L5.65133 9.37303C4.69903 9.56349 4.22288 9.65872 4.00012 9.90977C3.80605 10.1285 3.71743 10.4212 3.75758 10.7108C3.80367 11.0433 4.14703 11.3866 4.83375 12.0733L11.9195 19.1591C12.6062 19.8458 12.9496 20.1891 13.282 20.2352C13.5716 20.2754 13.8643 20.1868 14.083 19.9927C14.3341 19.7699 14.4293 19.2938 14.6198 18.3415L15.3527 14.677C15.388 14.5005 15.4056 14.4122 15.4379 14.3298C15.4666 14.2568 15.5038 14.1873 15.5487 14.123C15.5992 14.0504 15.6629 13.9868 15.7902 13.8594L17.3511 12.2985C17.4325 12.2171 17.4732 12.1764 17.518 12.1409C17.5577 12.1093 17.5998 12.0808 17.6439 12.0557C17.6935 12.0273 17.7464 12.0046 17.8522 11.9593L20.3466 10.8903C21.0743 10.5784 21.4381 10.4225 21.6034 10.1705C21.7479 9.95013 21.7996 9.68163 21.7473 9.42335C21.6874 9.12801 21.4075 8.8481 20.8477 8.28827L15.7045 3.14514C15.1447 2.58531 14.8648 2.3054 14.5695 2.24552C14.3112 2.19317 14.0427 2.24488 13.8223 2.38941C13.5703 2.55469 13.4144 2.91854 13.1025 3.64624L12.0335 6.14059C11.9882 6.24641 11.9655 6.29932 11.9372 6.34893C11.912 6.393 11.8835 6.4351 11.8519 6.47484C11.8164 6.51958 11.7757 6.56029 11.6943 6.64169Z"
+			fill="#3277ba" stroke="#4a4848" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+		</symbol>
+
+		<symbol id="icon-pin-off" viewBox="0 0 24 24" fill="none">
+		  <path d="M8.37658 15.6162L2.71973 21.273"
+			fill="none" stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+		  <path d="M11.6943 6.64169L10.1334 8.20258C10.0061 8.3299 9.9424 8.39357 9.86986 8.44415C9.80548 8.48905 9.73604 8.52622 9.66297 8.55488C9.58065 8.58717 9.49236 8.60482 9.3158 8.64014L5.65133 9.37303C4.69903 9.56349 4.22288 9.65872 4.00012 9.90977C3.80605 10.1285 3.71743 10.4212 3.75758 10.7108C3.80367 11.0433 4.14703 11.3866 4.83375 12.0733L11.9195 19.1591C12.6062 19.8458 12.9496 20.1891 13.282 20.2352C13.5716 20.2754 13.8643 20.1868 14.083 19.9927C14.3341 19.7699 14.4293 19.2938 14.6198 18.3415L15.3527 14.677C15.388 14.5005 15.4056 14.4122 15.4379 14.3298C15.4666 14.2568 15.5038 14.1873 15.5487 14.123C15.5992 14.0504 15.6629 13.9868 15.7902 13.8594L17.3511 12.2985C17.4325 12.2171 17.4732 12.1764 17.518 12.1409C17.5577 12.1093 17.5998 12.0808 17.6439 12.0557C17.6935 12.0273 17.7464 12.0046 17.8522 11.9593L20.3466 10.8903C21.0743 10.5784 21.4381 10.4225 21.6034 10.1705C21.7479 9.95013 21.7996 9.68163 21.7473 9.42335C21.6874 9.12801 21.4075 8.8481 20.8477 8.28827L15.7045 3.14514C15.1447 2.58531 14.8648 2.3054 14.5695 2.24552C14.3112 2.19317 14.0427 2.24488 13.8223 2.38941C13.5703 2.55469 13.4144 2.91854 13.1025 3.64624L12.0335 6.14059C11.9882 6.24641 11.9655 6.29932 11.9372 6.34893C11.912 6.393 11.8835 6.4351 11.8519 6.47484C11.8164 6.51958 11.7757 6.56029 11.6943 6.64169Z"
+			fill="none" stroke="#aaa" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+		</symbol>
+		
+		<symbol id="icon-pin-off-all" viewBox="0 0 32 32" fill="none">
+		  <path d="M12 17v5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+		  <path d="M15 9.34V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H7.89" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+		  <path d="m2 2 20 20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+		  <path d="M9 9v1.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+		</symbol>
+	   
+	    <symbol id="icon-plusA" viewBox="0 0 24 24">
+		  <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+		</symbol>
+	  
+		<symbol id="icon-copy" viewBox="0 0 24 24">
+		  <rect width="14" height="14" x="8" y="8" rx="2" ry="2" 
+			stroke="currentColor" stroke-width="2" fill="none" 
+			stroke-linecap="round" stroke-linejoin="round"/>
+		  <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" 
+			stroke="currentColor" stroke-width="2" fill="none" 
+			stroke-linecap="round" stroke-linejoin="round"/>
+		</symbol>
+
+		<symbol id="icon-delete" viewBox="0 0 24 24">
+			<rect width="18" height="18" x="3" y="3" rx="2" ry="2"
+				stroke="currentColor" stroke-width="2" fill="none"
+				stroke-linecap="round" stroke-linejoin="round"/>
+			<path d="m15 9-6 6"
+				stroke="currentColor" stroke-width="2" fill="none"
+				stroke-linecap="round" stroke-linejoin="round"/>
+			<path d="m9 9 6 6"
+				stroke="currentColor" stroke-width="2" fill="none"
+				stroke-linecap="round" stroke-linejoin="round"/>
+		</symbol>	 
+	   
+	   <symbol id="icon-clearCheck" viewBox="0 0 24 24">
+		  <path d="M21 21H8a2 2 0 0 1-1.42-.587l-3.994-3.999a2 2 0 0 1 0-2.828l10-10a2 2 0 0 1 2.829 0l5.999 6a2 2 0 0 1 0 2.828L12.834 21"/><path d="m5.082 11.09 8.828 8.828"/>
+		</symbol>
+		
+		<symbol id="icon-clearAll" viewBox="0 0 24 24">
+		  <path d="M2.586 16.726A2 2 0 0 1 2 15.312V8.688a2 2 0 0 1 .586-1.414l4.688-4.688A2 2 0 0 1 8.688 2h6.624a2 2 0 0 1 1.414.586l4.688 4.688A2 2 0 0 1 22 8.688v6.624a2 2 0 0 1-.586 1.414l-4.688 4.688a2 2 0 0 1-1.414.586H8.688a2 2 0 0 1-1.414-.586z"/><path d="m9 9 6 6"/>
+		</symbol>		
+	  
+	    <symbol id="icon-validate" viewBox="0 0 24 24">
+		  <path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/>
+		  <path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/>
+		  <path d="M12 2v2"/>
+		  <path d="M12 22v-2"/>
+		  <path d="m17 20.66-1-1.73"/>
+		  <path d="M11 10.27 7 3.34"/>
+		  <path d="m20.66 17-1.73-1"/>
+		  <path d="m3.34 7 1.73 1"/>
+		  <path d="M14 12h8"/>
+		  <path d="M2 12h2"/>
+		  <path d="m20.66 7-1.73 1"/>
+		  <path d="m3.34 17 1.73-1"/>
+		  <path d="m17 3.34-1 1.73"/>
+		  <path d="m11 13.73-4 6.93"/>
+		</symbol>
+
+		<symbol id="icon-range" viewBox="0 0 24 24">
+		  <path d="M10 12h11"/>
+		  <path d="M10 18h11"/>
+		  <path d="M10 6h11"/>
+		  <path d="M4 10h2"/>
+		  <path d="M4 6h1v4"/>
+		  <path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/>
+		</symbol>
+		
+		<symbol id="subdivision-list" viewBox="0 0 25 25">
+		  <path d="M11 17a4 4 0 0 1-8 0V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2Z"/>
+		  <path d="M16.7 13H19a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H7"/>
+		  <path d="M7 17h.01"/>
+		  <path d="m11 8 2.3-2.3a2.4 2.4 0 0 1 3.404.004L18.6 7.6a2.4 2.4 0 0 1 .026 3.434L9.9 19.8"/>
+		</symbol>
+		
+		<symbol id="methodology-full" viewBox="0 0 25 25">
+		  <circle cx="12" cy="12" r="10"/>
+		  <text x="12" y="12" text-anchor="middle" font-size="11" font-family="Arial" dominant-baseline="middle">m</text>
+		</symbol>
+
+		
+		<symbol id="icon-export" viewBox="0 0 80 80">
+		  </path><path fill="#fff" d="M30.26,54l-4.82-9.12c-0.272-0.599-0.464-1.231-0.57-1.88h-0.08c-0.163,0.682-0.377,1.35-0.64,2 l-4.85,9h-7.51l8.92-14l-8.16-14h7.67l4,8.39c0.355,0.758,0.636,1.548,0.84,2.36h0.08c0.16-0.54,0.45-1.36,0.88-2.44L30.47,26h7 l-8.36,13.88L37.74,54H30.26z"></path><path fill="#e0e9f0" d="M71 29H56v-7h15V29zM57 28h13v-5H57V28zM53 29L46.75 29 46.75 28 52 28 52 23 46.75 23 46.75 22 53 22zM71 39H56v-7h15V39zM57 38h13v-5H57V38zM71 49H56v-7h15V49zM57 48h13v-5H57V48zM53 39L46.75 39 46.75 38 52 38 52 33 46.75 33 46.75 32 53 32zM53 49L46.75 49 46.75 48 52 48 52 43 46.75 43 46.75 42 53 42zM71 59H56v-7h15V59zM57 58h13v-5H57V58zM53 59L46.75 59 46.75 58 52 58 52 53 46.75 53 46.75 52 53 52z"></path><path fill="#5d9874" d="M37.75 55h-7.48c-.189 0-.362-.106-.447-.275l-4.83-9.62c-.003-.006-.006-.012-.008-.018-.062-.137-.12-.274-.174-.414-.062.173-.128.345-.197.515l-4.787 9.537C19.742 54.894 19.569 55 19.38 55h-7.52c-.181 0-.348-.098-.436-.255-.088-.158-.085-.352.009-.506l8.697-14.25-8.016-14.245c-.087-.155-.086-.344.004-.498S12.372 25 12.55 25h7.67c.197 0 .375.115.456.295l4 8.89c.163.348.311.705.445 1.068.128-.347.273-.725.435-1.128l4.468-8.851C30.109 25.106 30.282 25 30.47 25h7c.179 0 .344.096.434.25.089.155.088.346-.001.501l-8.213 14.126 8.491 14.368c.091.154.093.346.003.502C38.095 54.903 37.93 55 37.75 55zM30.579 54h6.295l-8.194-13.866c-.092-.155-.093-.349-.001-.505L36.601 26h-5.823l-4.312 8.536c-.483 1.218-.729 1.958-.847 2.356-.063.212-.258.358-.479.358-.229 0-.509-.156-.565-.378-.196-.779-.468-1.543-.808-2.27L19.897 26h-6.492l7.741 13.755c.089.158.085.352-.009.506L12.751 54h6.32l4.632-9.225c.236-.586.443-1.235.601-1.892.054-.226.255-.384.486-.384.245 0 .534.178.574.419.099.604.276 1.19.527 1.745L30.579 54zM74.5 69h-28v-1h28c.827 0 1.5-.673 1.5-1.5v-53c0-.827-.673-1.5-1.5-1.5H46v-1h28.5c1.379 0 2.5 1.122 2.5 2.5v53C77 67.879 75.879 69 74.5 69z"></path><path fill="#5d9874" d="M47,76.602L3,68.416V11.584l44-8.186V76.602z M4,67.584l42,7.814V4.602L4,12.416V67.584z"></path>
+		</symbol>
+	  
+		<symbol id="icon-XML" viewBox="0 0 24 24">
+		  <path d="M2 9V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H20a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-1"/><path d="M2 13h10"/><path d="m9 16 3-3-3-3"/>
+		</symbol>
+
+		<symbol id="icon-plus" viewBox="0 0 24 24">
+		  <path d="M5 12h14" />
+		  <path d="M12 5v14" />
+		</symbol>
+		
+		<symbol id="icon-minus" viewBox="0 0 24 24">
+		  <path d="M5 12h14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+		</symbol>
+
+		<symbol id="icon-insert" viewBox="0 0 24 24">		
+	      <rect width="13" height="7" x="8" y="3" rx="1"/><path d="m2 9 3 3-3 3"/><rect width="13" height="7" x="8" y="14" rx="1"/>
+		</symbol>
+	  
+
+		<symbol id="icon-check" viewBox="0 0 24 24">
+		  <path d="M21 10.656V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h12.344" />
+		  <path d="m9 11 3 3L22 4" />
+		</symbol>
+	  
+		<symbol id="icon-toggle-off" viewBox="0 0 24 24">
+	      <circle cx="9" cy="12" r="3" />
+	      <rect width="20" height="14" x="2" y="5" rx="7" />
+		</symbol>
+
+		<symbol id="icon-toggle-on" viewBox="0 0 24 24">
+	      <circle cx="15" cy="12" r="3" />
+	      <rect width="20" height="14" x="2" y="5" rx="7" />
+		</symbol>
+	  
+	</svg>
+
+	<div id="tooltip-box" class="tooltip-box"></div>
+
+	<div class="main-panel">
+		<div class="header">
+			<span>CURIA ANALYSIS TASK<span class="subtitle">| DRAFTER & CHECKER</span></span>
+			<div class="header-buttons" style="display: flex; flex-direction: column; align-items: flex-end; gap: 20px;">
+				<div style="display: flex; gap: 6px;">				
+					
+					<button onclick="insertFromClipboard()" class="svg-button check-button" title="Insert from clipboard" id="insertButton">
+					  <svg width="20" height="20"><use href="#icon-insert" /></svg>
+					</button>
+					
+					<button onclick="addFromClipboard()" class="svg-button" title="Add from clipboard">
+					  <svg width="20" height="20"><use href="#icon-plus" /></svg>
+					</button>
+					
+				<div class="vertical-divider"></div>
+				
+					<button onclick="toggleCellarChecks()" class="svg-button" id="cellarSvgToggle" title="Enable Cellar">
+					  <svg width="20" height="20" id="cellarToggleIcon">
+						<use href="#icon-toggle-off" />
+					  </svg>
+					</button>			
+					
+				<div class="vertical-divider"></div>
+				
+					<!-- EXPORT EXCEL TEMPORARILY HIDDEN
+					<button onclick="exportToExcel()" class="svg-button" title="Export to Excel">
+					  <svg width="20" height="20"><use href="#icon-export" /></svg>
+					</button>
+					-->
+					
+					<button onclick="exportToXML()" class="svg-button" title="Export to XML">
+					  <svg width="20" height="20"><use href="#icon-XML" /></svg>
+					</button>
+					
+					<button onclick="clearAll()" class="svg-button" title="Clear All">
+					  <svg width="20" height="20"><use href="#icon-clearAll" /></svg>
+					</button>
+					
+
+				</div>				
+			</div>				
+		</div>
+	</div>
+
+	<div class="top-controls">
+	  <div class="button-group">
+		<button class="svg-buttonA" onclick="validateAll()" title="Validate all (CTRL+F1)">
+		  <svg><use href="#icon-validate" /></svg>
+		</button>
+		<button class="svg-buttonA" onclick="clearCheck()" title="Clear check (CTRL + F2)">
+		  <svg><use href="#icon-clearCheck" /></svg>
+		</button>
+
+		<div class="vertical-dividerA"></div>
+				
+		<button class="svg-buttonA" onclick="MethodologyA()" title="Subdivisions">
+		  <svg><use href="#subdivision-list" /></svg>
+		</button>
+		
+		<button class="svg-buttonA" onclick="MethodologyB()" title="Methodology">
+		  <svg><use href="#methodology-full" /></svg>
+		</button>
+		
+		<button class="svg-buttonA" onclick="addRange()" title="Add CELEX range">
+		  <svg><use href="#icon-range" /></svg>
+		</button>
+		
+		<div class="vertical-dividerA"></div>
+		
+		<div style="position: relative;">
+		  <input id="celexLookup" type="text" placeholder="find by alias…" title="Search predefined CELEX aliases"
+          style="padding: 6px 6px; font-size: 16px; font-family: 'Calibri', sans-serif; text-align: center; color: #145280; font-weight: 500; border: 1px solid #3d4b57; border-radius: 4px; width: 160px;" 
+          autocomplete="off" />
+        <div id="celexDropdown" class="celex-dropdown" style="display: none;"></div>
+		</div>
+		
+		<div style="position: relative;">
+		  <input id="checkEcli" type="text" placeholder="check ECLI…" title="Check ECLI in Cellar"
+          style="padding: 6px 6px; font-size: 16px; font-family: 'Calibri', sans-serif; text-align: center; color: #145280; font-weight: 500; border: 1px solid #3d4b57; border-radius: 4px; width: 160px;" 
+          autocomplete="off" />
+      
+		</div>
+		
+	  </div>	
+	 
+	<div style="display: flex; align-items: center; margin-top: 10px;">
+	  <input id="taskName" type="text" placeholder="BaseName…" title="Enter task name"
+		style="padding: 6px 6px; font-size: 18px; font-family: 'Calibri', sans-serif; text-align: center; color: #145280; font-weight: bold; border: 1px solid #3d4b57; border-radius: 4px; width: 130px;" />
+	</div>
+		
+		
+		
+	</div>
+
+
+  <div class="result" id="output"></div>
+
+	<div class="table-wrapper">
+	  <div class="scroll-container">
+		<table id="data-table">
+		 <colgroup>
+		  <col style="min-width: 40px; width: 1%;">
+		  <col style="min-width: 40px; width: 1%;">
+		  <col style="min-width: 120px; width: 16%;">
+		  <col style="min-width: 140px; width: 16%;">
+		  <col style="min-width: 150px; width: 46%;">
+		  <col style="min-width: 30px; width: 4%;">
+		  <col style="min-width: 30px; width: 4%;">
+		  <col style="min-width: 30px; width: 4%;">
+		</colgroup>
+			<thead>
+				<tr>
+					<th> </th>
+					<th> </th>
+					<th>CELEX</th>
+					<th>SUBDIVISION</th>
+					<th>SOURCE POINT(S)</th>
+					<th> </th>
+					<th> </th>
+					<th> </th>
+				</tr>
+				<tr>
+					<th class="pincol">
+					  <button class="btn-pinoff-all"
+							  type="button"
+							  title="Unpin all & validate"
+							  aria-label="Unpin all"
+							  onclick="unpinAllAndValidate()">
+						<svg class="icon-pinoff-all" aria-hidden="true">
+						  <use href="#icon-pin-off-all" xlink:href="#icon-pin-off-all"></use>
+						</svg>
+					  </button>
+					</th>
+					<td></td>
+					<td>
+						<div class="filter-wrap">
+						  <input type="text" id="celexFilter" class="filter-input" placeholder="…">
+						  <span class="filter-clear" onclick="clearFilter('celexFilter')">×</span>
+						</div>
+					</td>
+					<td>
+						<div class="filter-wrap">
+						  <input type="text" id="subdFilter" class="filter-input" placeholder="…">
+						  <span class="filter-clear" onclick="clearFilter('subdFilter')">×</span>
+						</div>
+					</td>
+					<td>
+						<div class="filter-wrap" style="position: relative; padding-right: 0;">
+						  <input type="text" id="pointsFilter" class="filter-input" placeholder="…">
+						  <span class="filter-clear" onclick="clearFilter('pointsFilter')" style="right: 15px;">×</span>
+
+						  <!-- Minus button -->
+						  <button id="decrementFilterBtn" class="svg-buttonA" title="Decrement source point"
+							style="position: absolute; right: 55px; top: 12px; transform: translateY(-50%);">
+							<svg style="width: 15px; height: 15px; color: #757474"><use href="#icon-minus" /></svg>
+						  </button>
+
+						  <!-- Plus button -->
+						  <button id="incrementFilterBtn" class="svg-buttonA" title="Increment source point"
+							style="position: absolute; right: 25px; top: 12px; transform: translateY(-50%);">
+							<svg style="width: 15x; height: 15px; color: #757474"><use href="#icon-plusA" /></svg>
+						  </button>
+						</div>
+
+					</td>
+					
+					<td colspan="3" id="filterActions">
+					  <button class="buttonB small" onclick="clearAllFilters()">CLEAR</button>
+					  <button id="addTopBtn" class="svg-buttonA add-btn" onclick="addRowAtTop()" title="Add row at top" style="margin-left:22px;">
+						<svg class="action-icon"><use href="#icon-plusA" /></svg>
+					  </button>
+					</td>
+					
+				</tr>
+			</thead>
+		</table>
+		  <div class="resizable-container">
+			<div class="scroll-body">
+				<table>
+				  <colgroup>
+					  <col style="min-width: 40px; width: 1%;">
+					  <col style="min-width: 40px; width: 1%;">
+					  <col style="min-width: 120px; width: 16%;">
+					  <col style="min-width: 140px; width: 16%;">
+					  <col style="min-width: 150px; width: 46%;">
+					  <col style="min-width: 30px; width: 4%;">
+					  <col style="min-width: 30px; width: 4%;">
+					  <col style="min-width: 30px; width: 4%;">
+				  </colgroup>
+				  <tbody id="data-body"></tbody>
+				</table>
+			</div>
+			<div class="resizer"></div>		
+		  </div>	
+	</div>
+
+  <script>
+  
+/// FUNCTIONS
+
+// PINs
+	function togglePin(el) {
+	  const row = el.closest('tr');
+	  const icon = el.querySelector('use');
+
+	  const isPinned = row.classList.toggle('pinned-row');
+	  row.dataset.pinned = isPinned ? "true" : "false";
+	  icon.setAttribute('href', isPinned ? '#icon-pin-on' : '#icon-pin-off');
+
+	  updateRowIndexes(); // refresh row numbers
+	  reorderRows();
+	  saveTableToLocalStorage();
+	}
+	
+	function reorderRows() {
+	  const body = document.querySelector('.scroll-body tbody');
+	  const pinned = [];
+	  const unpinned = [];
+
+	  [...body.rows].forEach(row => {
+		if (row.dataset.pinned === "true") pinned.push(row);
+		else unpinned.push(row);
+	  });
+
+	  body.innerHTML = '';
+	  pinned.forEach(row => body.appendChild(row));
+	  unpinned.forEach(row => body.appendChild(row));
+
+	  updateRowIndexes();
+	}
+	
+	function unpinAllAndValidate() {
+	  const body = document.querySelector('.scroll-body tbody');
+	  const rows = body ? Array.from(body.querySelectorAll('tr')) : [];
+
+	  rows.forEach(row => {
+		if (row.dataset.pinned === "true" || row.classList.contains('pinned-row')) {
+		  row.classList.remove('pinned-row');
+		  row.dataset.pinned = "false";
+		  const useEl = row.querySelector('.pin-cell use');
+		  if (useEl) {
+			useEl.setAttribute('href', '#icon-pin-off');
+			useEl.setAttribute('xlink:href', '#icon-pin-off');
+		  }
+		}
+	  });
+
+	  if (typeof updateRowIndexes === 'function') updateRowIndexes();
+	  if (typeof reorderRows === 'function') reorderRows();
+	  if (typeof saveTableToLocalStorage === 'function') saveTableToLocalStorage();
+	  if (typeof validateAll === 'function') validateAll();
+	}
+
+///////   
+	function attachCelexListeners() {
+	  const celexSpans = document.querySelectorAll('.celex-text');
+
+	  for (const span of celexSpans) {
+		span.removeEventListener('mouseenter', span._enter);
+		span.removeEventListener('mouseleave', span._leave);
+
+		span._enter = () => {
+		  const celex = span.innerText.trim();
+		  showTooltip(span, celex);
+		};
+
+		span._leave = () => {
+		  const tooltip = document.getElementById('tooltip-box');
+		  tooltip.style.visibility = 'hidden';
+		  tooltip.style.opacity = '0';
+		};
+
+		span.addEventListener('mouseenter', span._enter);
+		span.addEventListener('mouseleave', span._leave);
+	  }
+	}
+
+	function isCelex(line) {
+	  return /^(\d{4,9}[A-Z]{1,3}\d{3,5}(\(\d+\))?|E\d{4}[A-Z]{1,3}\d{3,5}(\(\d+\))?|C\/?\d{4}\/\d{3}(\/\d{2})?|120\d{2}E\/PRO\/\d{2}|12007[LPS]\/TXT)$/.test(line.trim());
+	}
+
+	function isSubdivision(line) {
+	  return /^[A-Z][A-Z0-9]*(\.[A-Z0-9]+)*$/i.test(line);
+	}
+
+	function isPoints(line) {	  
+	  return /^[\d\s\-–]+$/.test(line) && /\d/.test(line);
+	}
+
+	function sortLinesByTargetAndSubdivision(indexes, rawLines) {
+	  return [...indexes].sort((a, b) => {
+		const [tA = '', sA = ''] = rawLines[a].split('\t');
+		const [tB = '', sB = ''] = rawLines[b].split('\t');
+
+		const celexParts = celex => {
+		  const match = celex.match(/^([0-9A-Z]+?)(\(\d+\))?$/);
+		  if (!match) return [celex, 0];
+		  const [, base, version] = match;
+		  return [base, version ? parseInt(version.replace(/[()]/g, ''), 10) : 0];
+		};
+
+		const [baseA, versionA] = celexParts(tA);
+		const [baseB, versionB] = celexParts(tB);
+
+		if (baseA !== baseB) {
+		  return baseA.localeCompare(baseB);
+		}
+
+		if (versionA !== versionB) {
+		  return versionA - versionB;
+		}
+
+		const tokenize = (str) =>
+		  str.match(/[A-Za-z]+|\d+/g)?.map(token => isNaN(token) ? token : parseInt(token, 10)) || [];
+
+		const tokensA = tokenize(sA);
+		const tokensB = tokenize(sB);
+
+		for (let i = 0; i < Math.max(tokensA.length, tokensB.length); i++) {
+		  const valA = tokensA[i];
+		  const valB = tokensB[i];
+		  if (valA === undefined) return -1;
+		  if (valB === undefined) return 1;
+		  if (valA === valB) continue;
+		  return valA > valB ? 1 : -1;
+		}
+		return 0;		
+	  });
+	} 
+
+	function toggleTable() {
+      const table = document.getElementById('data-table');
+      table.style.display = table.style.display === 'none' ? 'table' : 'none';
+    }	
+   
+    function createRow(celex = '', subd = '', points = '') {
+	  const row = document.createElement('tr');
+	  //row.classList.add('draggable');
+
+	  row.innerHTML = `
+		<td class="pin-cell" onclick="togglePin(this)">
+			<svg class="action-icon"><use href="#icon-pin-off" /></svg>
+		  </td>
+		<td class="row-index"></td>
+		<td class="celex">
+			<span class="celex-text" contenteditable="true">${celex}</span>
+		</td>
+		<td contenteditable="true" class="subd">${subd}</td>
+		<td contenteditable="true" class="points">${points}</td>
+		<td class="add-btn" onclick="addRowAfter(this)">
+		  <svg class="action-icon"><use href="#icon-plusA" /></svg>
+		</td>
+		<td class="clone-btn" onclick="cloneRow(this)">
+		  <svg class="action-icon"><use href="#icon-copy" /></svg>
+		</td>
+		<td class="delete-btn" onclick="deleteRow(this)">
+		  <svg class="action-icon"><use href="#icon-delete" /></svg>
+		</td>
+	  `;
+
+	  // Attach listeners once per cell
+	  row.querySelectorAll('[contenteditable="true"]').forEach(cell => {
+		cell.addEventListener('blur', saveTableToLocalStorage);
+
+		if (cell.classList.contains('celex-text')) {
+		  cell.addEventListener('blur', celexValidationOnBlur);
+		}
+		
+		// 🔁 live duplicate check while typing
+		  if (!cell.dataset.inputHandlerAttached) {
+			cell.addEventListener('input', refreshDuplicateHighlights);
+			cell.dataset.inputHandlerAttached = 'true';
+		  }
+
+		if (!cell.dataset.pasteHandlerAttached) {
+		  cell.addEventListener('paste', e => {
+			e.preventDefault();
+			const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+			insertTextAtCaret(text);
+			refreshDuplicateHighlights(); // also update after paste
+		  });
+		  cell.dataset.pasteHandlerAttached = 'true';
+		}
+	  });
+
+	  attachCelexListeners();
+	  annotateCelexCells();
+	  return row;
+	}
+
+    function addRowAfter(el) {
+	  const newRow = createRow();
+	  el.closest('tr').after(newRow);
+	  updateRowIndexes();
+
+	  if (cellarChecksEnabled) annotateCelexCells();
+	  
+	  // make CELEX immediately editable, same as addRowAtTop
+	  const firstCell = newRow.querySelector('.celex .celex-text');
+	  if (firstCell) firstCell.focus();
+	}
+	
+	function addRowAtTop() {
+	  const body = document.querySelector('.scroll-body tbody');
+	  const newRow = createRow();
+
+	  if (body.firstChild) {
+		body.insertBefore(newRow, body.firstChild);
+	  } else {
+		body.appendChild(newRow);
+	  }
+
+	  updateRowIndexes();
+
+	  // keep current behavior consistent with other “add row” actions
+	  if (typeof cellarChecksEnabled !== 'undefined' && cellarChecksEnabled) {
+		annotateCelexCells();
+	  }
+
+	  // optional: place cursor in the first cell for quick typing
+	  const firstCell = newRow.querySelector('.celex .celex-text');
+	  if (firstCell) firstCell.focus();
+	}
+
+	function cloneRow(el) {
+	  const tr = el.closest('tr');
+	  const celex = tr.querySelector('.celex')?.innerText.trim() || '';
+	  const subd = tr.querySelector('.subd')?.innerText.trim() || '';
+	  const pts = tr.querySelector('.points')?.innerText.trim() || '';
+	  const newRow = createRow(celex, subd, pts);
+
+	  const originalCell = tr.querySelector('.celex');
+	  const newCell = newRow.querySelector('.celex');
+	  if (originalCell?.dataset?.validated) {
+		newCell.dataset.validated = originalCell.dataset.validated;
+		newCell.dataset.tooltip = originalCell.dataset.tooltip;
+	  }
+
+	  tr.after(newRow);
+	  updateRowIndexes();
+	  attachCelexListeners();
+	  if (cellarChecksEnabled) annotateCelexCells();	  
+
+	  // Attach listeners once per cell
+	  newRow.querySelectorAll('[contenteditable="true"]').forEach(cell => {
+		cell.addEventListener('blur', saveTableToLocalStorage);
+
+		if (cell.classList.contains('celex-text')) {
+		  cell.addEventListener('blur', celexValidationOnBlur);
+		}
+
+		if (!cell.dataset.pasteHandlerAttached) {
+		  cell.addEventListener('paste', e => {
+			e.preventDefault();
+			const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+			insertTextAtCaret(text);
+		  });
+		  cell.dataset.pasteHandlerAttached = 'true';
+		}
+	  });
+	 
+	 // ✅ immediately show red highlight on the original + clone
+		refreshDuplicateHighlights();
+	}
+
+	function insertTextAtCaret(text) {
+	  const selection = window.getSelection();
+	  if (!selection.rangeCount) return;
+
+	  const range = selection.getRangeAt(0);
+	  range.deleteContents();
+	  range.insertNode(document.createTextNode(text));
+
+	  // Move caret after inserted text
+	  range.collapse(false);
+	  selection.removeAllRanges();
+	  selection.addRange(range);
+	}    
+
+	function deleteRow(el) {
+	  if (confirm('Are you sure you want to delete this row?')) {
+		const row = el.closest('tr');
+		row.remove();
+		updateRowIndexes();
+		refreshDuplicateHighlights(); // ✅ update duplicates view
+	  }
+	}
+
+    function insertFromClipboard() {
+	  navigator.clipboard.readText().then(text => {
+		processInput(text, false);
+
+		// ✅ Change icon after insert
+		const insertIcon = document.querySelector('#insertButton use');
+		if (insertIcon) {
+		  insertIcon.setAttribute('href', '#icon-check');
+		  insertIcon.closest('svg').classList.add('check-icon');
+		}
+	  });
+	}
+
+	function updateRowIndexes() {
+	  rows = document.querySelectorAll('.scroll-body tbody tr');
+
+	  rows.forEach((row, index) => {
+		const indexCell = row.querySelector('.row-index');
+		if (indexCell) indexCell.textContent = index + 1;
+	  });
+	}	
+	
+	function refreshDuplicateHighlights() {
+	  const rows = Array.from(document.querySelectorAll('.scroll-body tbody tr'));
+
+	  // clear previous duplicate marks
+	  rows.forEach(r => r.classList.remove('dup-line'));
+
+	  // group by CELEX + Subdivision only
+	  const groups = new Map();
+	  for (const r of rows) {
+		const celex = r.querySelector('.celex .celex-text')?.innerText.trim() || '';
+		const subd  = r.querySelector('.subd')?.innerText.trim() || '';
+		// require CELEX to be non-empty; Subdivision may be empty and still count
+		if (!celex) continue;
+
+		const key = `${celex}\t${subd}`;
+		if (!groups.has(key)) groups.set(key, []);
+		groups.get(key).push(r);
+	  }
+
+	  // mark only groups with more than one row
+	  for (const group of groups.values()) {
+		if (group.length > 1) group.forEach(r => r.classList.add('dup-line'));
+	  }
+	}
+
+    function addFromClipboard() {
+	  navigator.clipboard.readText().then(text => processInput(text, true));
+	}
+
+    function processInput(text, append = false) {
+	  const body = document.querySelector('.scroll-body tbody');
+	  if (!append) body.innerHTML = '';
+
+	  const lines = text.trim().split(/\r?\n/).map(l => l.trim()).filter(l =>
+		l && !/^Target$/i.test(l) && !/^Detail$/i.test(l) && !/^\d+\.\s/.test(l)
+	  );
+
+	  const cleaned = [];
+	  let i = 0;
+	  while (i < lines.length) {
+		const a = lines[i];
+		const b = lines[i + 1] || '';
+		const c = lines[i + 2] || '';
+
+		// Helper to check if a line is multiple numbers (source points)
+		const isMultipleNumbers = (line) => {
+		  const nums = line.trim().split(/\s+/);
+		  return nums.length > 1 || line.includes('-') || line.includes('–');
+		};
+
+		if (isCelex(a) && isPoints(b) && !isMultipleNumbers(b) && isPoints(c)) {
+		  // b is single number, c is points → b is subdivision
+		  cleaned.push(`${a}\t${b}\t${c}`);
+		  i += 3;
+		} else if (isCelex(a) && isPoints(b) && isPoints(c)) {
+		  // Both b and c are points (multi-number)
+		  cleaned.push(`${a}\t\t${b} ${c}`);
+		  i += 3;
+		} else if (isCelex(a) && !isPoints(b) && isPoints(c)) {
+		  // b has letters, c is points → b is subdivision
+		  cleaned.push(`${a}\t${b}\t${c}`);
+		  i += 3;
+		} else if (isCelex(a) && isPoints(b)) {
+		  cleaned.push(`${a}\t\t${b}`);
+		  i += 2;
+		} else if (isCelex(a)) {
+		  cleaned.push(`${a}\t\t`);
+		  i += 1;
+		} else {
+		  i++;
+		}
+	  }
+
+	  const sortedIndexes = sortLinesByTargetAndSubdivision([...cleaned.keys()], cleaned);
+	  const sorted = sortedIndexes.map(i => cleaned[i]);
+
+	  const fragment = document.createDocumentFragment();
+	  for (const line of sorted) {
+		const [celex, subd, points] = line.split('\t');
+		const row = createRow(celex, subd, points);
+		fragment.appendChild(row);
+	  }
+	  body.appendChild(fragment);
+	  attachCelexListeners(); 
+	  updateRowIndexes();
+	}
+
+// CLEARINGs
+	function clearCheck() {
+	  document.getElementById('output').innerHTML = '';
+	  document.querySelectorAll('.scroll-body tbody tr').forEach(row => {
+		row.classList.remove('error-line');
+		row.removeAttribute('data-range-error'); // ✅ added line
+
+		row.querySelector('.celex').classList.remove('conflict');
+		row.querySelector('.subd').classList.remove('conflict');
+
+		const ptsCell = row.querySelector('.points');
+		ptsCell.classList.remove('conflict');
+		ptsCell.innerText = ptsCell.innerText.trim(); // Remove all <span>s
+	  });
+	}
+
+	function clearAll() {
+	  if (confirm('Are you sure you want to delete all rows and clear saved data?')) {
+		// Clear checkboxes and internal markers
+		clearCheck();
+
+		// Remove CELEX validation states
+		document.querySelectorAll('.celex').forEach(cell => {
+		  delete cell.dataset.validated;
+		  delete cell.dataset.tooltip;
+		});
+
+		// Clear table body
+		const body = document.querySelector('.scroll-body tbody');
+		body.innerHTML = '';
+
+		// Clear saved data
+		localStorage.removeItem('checkerTableData');
+		localStorage.removeItem('celexCache');
+		localStorage.removeItem('taskName');
+
+		// Clear input field
+		document.getElementById('taskName').value = '';
+
+		// Reset insert button icon
+		const insertButtonUse = document.querySelector('#insertButton svg use');
+		if (insertButtonUse) {
+		  insertButtonUse.setAttribute('href', '#icon-insert');
+		  insertButtonUse.closest('svg').classList.remove('check-icon');
+		}
+
+		// ✅ Add one blank row manually
+		body.appendChild(createRow());   
+		updateRowIndexes();	
+		clearAllFilters();
+	  }
+	}
+
+////////////////////////////////////////
+
+	function markPointsInCell(cell, toHighlight) {
+	  let text = cell.innerText;
+
+	  // Sort longer highlights first so we don't break partial matches
+	  const sorted = [...toHighlight].sort((a, b) => b.length - a.length);
+
+	  sorted.forEach(str => {
+		const escaped = str.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+		text = text.replace(new RegExp(`\\b${escaped}\\b`, 'g'), `<span class="conflict">${str}</span>`);
+	  });
+
+	  cell.innerHTML = text;
+	}
+
+// VALIDATION	
+	async function validateAll() {
+	  clearCheck();
+	  
+	  function extractPointsExpanded(text) {
+		const nums = new Set();
+
+		// Add standalone digits
+		const singles = [...text.matchAll(/\b\d+\b/g)].map(m => parseInt(m[0]));
+		singles.forEach(n => nums.add(n));
+
+		// Expand hyphenated ranges
+		const ranges = [...text.matchAll(/\b(\d+)\s*-\s*(\d+)\b/g)];
+		ranges.forEach(match => {
+		  const start = parseInt(match[1]);
+		  const end = parseInt(match[2]);
+		  if (end >= start) {
+			for (let i = start; i <= end; i++) {
+			  nums.add(i);
+			}
+		  }
+		});
+
+		return [...nums];
+	  }
+	  
+	  const body = document.querySelector('.scroll-body tbody');
+	  let rows = Array.from(body.querySelectorAll('tr'));
+
+	  // 🟡 Step 1: Cache validated CELEX info
+	  const celexMeta = new Map();
+	  rows.forEach(row => {
+		const celexCell = row.querySelector('.celex');
+		const celex = celexCell?.innerText.trim();
+		if (celex && celexCell?.dataset?.validated === "true") {
+		  celexMeta.set(celex, {
+			validated: "true",
+			tooltip: celexCell.dataset.tooltip
+		  });
+		}
+	  });
+
+	  const rawLines = rows.map(row => {
+		const celex = row.querySelector('.celex')?.innerText.trim() || '';
+		const subd = row.querySelector('.subd')?.innerText.trim() || '';
+		const pts = row.querySelector('.points')?.innerText.trim() || '';
+		return `${celex}\t${subd}\t${pts}`;
+	  });
+
+	  const sortedIndexes = sortLinesByTargetAndSubdivision([...rawLines.keys()], rawLines);
+	  const sortedLines = sortedIndexes.map(i => rawLines[i]);
+
+	  // 🔁 STEP 1: Separate pinned and unpinned rows
+	  const allRowsRaw = Array.from(body.querySelectorAll('tr'));
+	  const pinnedRows = allRowsRaw.filter(row => row.dataset.pinned === "true");
+	  const unpinnedRows = allRowsRaw.filter(row => row.dataset.pinned !== "true");
+
+	  // 🔁 STEP 2: Extract CELEX|subd|points for unpinned rows
+	  const rawUnpinnedLines = unpinnedRows.map(row => {
+		const celex = row.querySelector('.celex')?.innerText.trim() || '';
+		const subd = row.querySelector('.subd')?.innerText.trim() || '';
+		const pts = row.querySelector('.points')?.innerText.trim() || '';
+		return `${celex}\t${subd}\t${pts}`;
+	  });
+
+	  // 🔁 STEP 3: Sort unpinned lines
+	  const sortedUnpinnedIndexes = sortLinesByTargetAndSubdivision(
+		[...rawUnpinnedLines.keys()],
+		rawUnpinnedLines
+	  );
+	  const sortedUnpinnedLines = sortedUnpinnedIndexes.map(i => rawUnpinnedLines[i]);
+
+	  // 🔁 STEP 4: Rebuild validated unpinned rows
+	  const fragment = document.createDocumentFragment();
+	  for (const line of sortedUnpinnedLines) {
+		const [celex, subd, points] = line.split('\t');
+		const newRow = createRow(celex, subd, points);
+		const newCell = newRow.querySelector('.celex');
+		if (celexMeta.has(celex)) {
+		  const meta = celexMeta.get(celex);
+		  newCell.dataset.validated = meta.validated;
+		  newCell.dataset.tooltip = meta.tooltip;
+		}
+		fragment.appendChild(newRow);
+	  }
+
+	  // 🔁 STEP 5: Replace table content with pinned + validated unpinned rows
+	  body.innerHTML = '';
+	  pinnedRows.forEach(row => body.appendChild(row));
+	  body.appendChild(fragment);
+
+	  // 🔁 STEP 6: Refresh row references correctly
+	  rows = Array.from(body.querySelectorAll('tr'));
+
+	  attachCelexListeners(); // ✅ Add listeners for tooltips
+	  annotateCelexCells();   // ✅ Revalidate CELEXs if Cellar is enabled
+
+	  // Now continue with actual validation below...
+	  rows = document.querySelectorAll('.scroll-body tbody tr');
+
+	  const issues = [];            // <<<<<<<< use structured issues
+	  const seen = new Map();
+	  const pointMap = new Map();
+	  const rowPointHighlights = new Map();
+
+	  rows.forEach((row, idx) => {
+		const celex = row.querySelector('.celex').innerText.trim();
+		const subd = row.querySelector('.subd').innerText.trim();
+		  
+		// 🔴 rule: CELEX starting with "6" must have subdivision "" or starting with "N"
+		if (celex.startsWith('6') && subd && !subd.startsWith('N')) {
+		  row.classList.add('error-line');
+		  row.querySelector('.subd').classList.add('conflict');
+		  issues.push({ rows: [idx + 1], message: `❌ Row ${idx + 1}: Invalid subdivision for sector 6 Celex — must be empty or start with "N".` });
+		}
+		  
+		// 🔴 Check for invalid subdivisions (must contain at least one letter) ❗ Exception: CELEX 31987R2658
+		if (subd && !/[A-Za-z]/.test(subd) && celex !== '31987R2658') {
+		  row.classList.add('error-line');
+		  row.querySelector('.subd').classList.add('conflict');
+		  issues.push({ rows: [idx + 1], message: `❌ Row ${idx + 1}: Invalid subdivision — must contain at least one letter.` });
+		}
+
+		const pts = row.querySelector('.points').innerText.trim();
+		
+		// 🔴 Check for redundant double spaces between numbers, e.g. "1␣␣3"
+		if (/\d+\s{2,}\d+/.test(pts)) {
+		  // whole row light red (consistent with other validations)
+		  row.classList.add('error-line');
+
+		  // find all occurrences like "12␣␣13" (2+ whitespace chars)
+		  const doubleSpaceRegex = /(\d+)\s{2,}(\d+)/g;
+		  let match;
+		  while ((match = doubleSpaceRegex.exec(pts)) !== null) {
+			// red-highlight the numbers around the extra space
+			if (!rowPointHighlights.has(row)) rowPointHighlights.set(row, new Set());
+			rowPointHighlights.get(row).add(match[1]);
+			rowPointHighlights.get(row).add(match[2]);
+
+			// add report message
+			issues.push({ rows: [idx + 1], message: `❌ Row ${idx + 1}: Redundant space between ${match[1]} and ${match[2]}` });
+		  }
+		}
+		
+		
+		// 🔴 Check for invalid characters in source points (letters or letter codes)
+		if (/[A-Za-z]/.test(pts)) {
+		  row.classList.add('error-line');
+		  const ptsCell = row.querySelector('.points');
+		  ptsCell.classList.add('conflict');
+		  issues.push({ rows: [idx + 1], message: `❌ Row ${idx + 1}: Invalid characters in source point(s) — only digits and hyphenated ranges allowed.` });
+
+		  // Optional: highlight the offending letters
+		  const highlightSet = new Set([...pts.matchAll(/[A-Za-z]+/g)].map(m => m[0]));
+		  if (!rowPointHighlights.has(row)) rowPointHighlights.set(row, new Set());
+		  highlightSet.forEach(ch => rowPointHighlights.get(row).add(ch));
+		}
+
+		const key = celex + '|' + subd;
+
+		if (!seen.has(key)) seen.set(key, []);
+		seen.get(key).push(row);
+
+		const nums = pts.split(/\s+/).map(n => parseInt(n)).filter(n => !isNaN(n));
+		
+		// 🔶 Check for duplicates
+		const counts = new Map();
+			nums.forEach(n => counts.set(n, (counts.get(n) || 0) + 1));
+			const dupValues = [...counts.entries()].filter(([, c]) => c > 1).map(([n]) => n);
+
+			if (dupValues.length > 0) {
+			  row.classList.add('error-line'); // keep row flagged
+			  issues.push({
+				rows: [idx + 1],
+				message: `❌ Row ${idx + 1}: Duplicate source point(s): ${dupValues.join(', ')}`
+			  });
+
+			  if (!rowPointHighlights.has(row)) rowPointHighlights.set(row, new Set());
+			  dupValues.forEach(d => rowPointHighlights.get(row).add(String(d)));
+			}
+		
+		// 🔶 Check if source points are in ascending order
+		let hasOrderError = false;
+		for (let i = 1; i < nums.length; i++) {
+		  if (nums[i] < nums[i - 1]) {
+			if (!hasOrderError) {
+			  row.classList.add('error-line');
+			  row.querySelector('.celex').classList.add('conflict');
+			  issues.push({ rows: [idx + 1], message: `❌ Row ${idx + 1}: Source points not in ascending order` });
+			  hasOrderError = true;
+			}
+			if (!rowPointHighlights.has(row)) rowPointHighlights.set(row, new Set());
+			rowPointHighlights.get(row).add(nums[i].toString());
+			rowPointHighlights.get(row).add(nums[i - 1].toString());
+		  }
+		}
+		
+		
+		// ✅ Check all hyphenated ranges directly
+		const hyphenated = [...pts.matchAll(/\b(\d+)\s*-\s*(\d+)\b/g)];
+		for (const m of hyphenated) {
+		  const start = parseInt(m[1]);
+		  const end = parseInt(m[2]);
+
+		  if (!isNaN(start) && !isNaN(end)) {
+			const length = end - start + 1;
+
+			// 🚫 Rule: Must be at least 3 points
+			if (length < 3) {
+			  row.classList.add('error-line');
+			  row.querySelector('.celex').classList.add('conflict');
+
+			  if (!row.hasAttribute('data-range-error')) {
+				issues.push({ rows: [parseInt(row.querySelector('.row-index')?.textContent || (idx + 1), 10)], message: `❌ Row ${row.querySelector('.row-index')?.textContent || idx + 1}: Hyphenated range ${start}-${end} must cover at least 3 points` });
+				row.setAttribute('data-range-error', 'true');
+			  }
+
+			  if (!rowPointHighlights.has(row)) rowPointHighlights.set(row, new Set());
+			  rowPointHighlights.get(row).add(`${start} - ${end}`);
+			}
+		  }
+		}
+			
+		const ptsCell = row.querySelector('.points');
+		const tokens = ptsCell.innerText.trim().split(/\s+/);
+		let flaggedIndexes = new Set();
+		let brokenChainIndexes = new Set();
+		let chainStart = 0;
+		let hasConsecutive = false;
+
+		for (let i = 1; i < nums.length; i++) {
+		  if (nums[i] === nums[i - 1] + 1) {
+			if (!hasConsecutive) {
+			  chainStart = i - 1;
+			  hasConsecutive = true;
+			}
+		  } else {
+			if (hasConsecutive && i - chainStart >= 3) {
+			  for (let j = chainStart; j < i; j++) {
+				flaggedIndexes.add(j);
+			  }
+			  row.classList.add('error-line');
+			  row.querySelector('.celex').classList.add('conflict');
+			  issues.push({ rows: [idx + 1], message: `❌ Row ${idx + 1}: Three or more consecutive points` });
+			}
+
+			// ✅ Check that hyphenated ranges are valid (must include full consecutive block)
+			const hyphenated = [...pts.matchAll(/\b(\d+)\s*-\s*(\d+)\b/g)];
+			for (const m of hyphenated) {
+			  const start = parseInt(m[1]);
+			  const end = parseInt(m[2]);
+
+			  // must be at least Three or more range
+			  // Check for invalid short hyphenated ranges
+			  if (!isNaN(start) && !isNaN(end)) {
+				const length = end - start + 1;
+				if (length < 3) {
+				  row.classList.add('error-line');
+				  row.querySelector('.celex').classList.add('conflict');
+				  if (!row.hasAttribute('data-range-error')) {
+					issues.push({ rows: [idx + 1], message: `❌ Row ${idx + 1}: Hyphenated range ${start}-${end} must cover at least 3 points` });
+					row.setAttribute('data-range-error', 'true');
+				  }
+
+				  if (!rowPointHighlights.has(row)) rowPointHighlights.set(row, new Set());
+				  rowPointHighlights.get(row).add(`${start} - ${end}`);
+				}
+			  }
+
+			  // must be a valid Three or more range
+			  if (!isNaN(start) && !isNaN(end) && end > start && (end - start + 1) >= 3) {
+				// check if the immediate successor to the range is present
+				if (nums.includes(end + 1)) {
+				  row.classList.add('error-line');
+				  row.querySelector('.celex').classList.add('conflict');
+				  if (!row.hasAttribute('data-range-error')) {
+					issues.push({ rows: [idx + 1], message: `❌ Row ${idx + 1}: Range ${start}-${end} should include ${end + 1}` });
+					row.setAttribute('data-range-error', 'true');
+				  }
+
+				  // highlight the whole range and the missing successor
+				  if (!rowPointHighlights.has(row)) rowPointHighlights.set(row, new Set());
+				  // highlight the range text as a whole instead of each number
+				  rowPointHighlights.get(row).add(`${start} - ${end}`);
+				  rowPointHighlights.get(row).add(String(end + 1));
+				}
+				
+				// 🆕 NEW: predecessor present → range should include it
+	  if (nums.includes(start - 1)) {
+		row.classList.add('error-line');
+		row.querySelector('.celex').classList.add('conflict');
+		if (!row.hasAttribute('data-range-error')) {
+		  issues.push({ rows: [idx + 1], message: `❌ Row ${idx + 1}: Range ${start}-${end} should include ${start - 1}` });
+		  row.setAttribute('data-range-error', 'true');
+		}
+		if (!rowPointHighlights.has(row)) rowPointHighlights.set(row, new Set());
+		rowPointHighlights.get(row).add(`${start} - ${end}`);
+		rowPointHighlights.get(row).add(String(start - 1));
+	  }
+			  }				  
+			}
+			
+			hasConsecutive = false;
+		  }
+		}			
+
+		// check trailing chain at end
+		if (hasConsecutive && nums.length - chainStart >= 3) {
+		  for (let j = chainStart; j < nums.length; j++) {
+			flaggedIndexes.add(j);
+		  }
+		  row.classList.add('error-line');
+		  row.querySelector('.celex').classList.add('conflict');
+		  issues.push({ rows: [idx + 1], message: `❌ Row ${idx + 1}: Three or more consecutive points` });
+		}
+
+		const highlightSet = new Set();
+		flaggedIndexes.forEach(i => {
+		  if (nums[i] !== undefined) highlightSet.add(String(nums[i]));
+		});
+		brokenChainIndexes.forEach(i => {
+		  if (nums[i] !== undefined) highlightSet.add(String(nums[i]));
+		});
+
+		if (!rowPointHighlights.has(row)) rowPointHighlights.set(row, new Set());
+		highlightSet.forEach(pt => rowPointHighlights.get(row).add(pt));
+
+		const expandedPoints = extractPointsExpanded(pts);
+		expandedPoints.forEach(pt => {
+		  const ptKey = celex + '|' + pt;
+		  if (!pointMap.has(ptKey)) pointMap.set(ptKey, []);
+		  pointMap.get(ptKey).push({ row, subd });
+		});
+
+		if (!pts) {
+		  row.classList.add('error-line');
+		  row.querySelector('.celex').classList.add('conflict');
+		  issues.push({ rows: [idx + 1], message: `❌ Row ${idx+1}: Missing source point(s)` });
+		}
+		
+		// ✅ Check for badly spaced hyphens and collect them    
+		if (pts.includes('-') || pts.includes('–')) {
+		  const hyMatches = [...pts.matchAll(/\b(\d+)(\s*)([-–])(\s*)(\d+)\b/g)];
+
+		  // "bad" = missing space on either side of the hyphen/dash
+		  const badParts = hyMatches.filter(m => m[2].length === 0 || m[4].length === 0);
+
+		  if (badParts.length > 0) {
+			row.classList.add('error-line');
+			row.querySelector('.celex').classList.add('conflict');
+			issues.push({
+			  rows: [idx + 1],
+			  message: `❌ Row ${idx + 1}: Bad hyphen spacing (must be: number ␣-␣ number)`
+			});
+
+			if (!rowPointHighlights.has(row)) rowPointHighlights.set(row, new Set());
+			badParts.forEach(m => rowPointHighlights.get(row).add(m[0]));
+		  }
+		}		
+		
+	  });
+
+	  for (const [key, group] of seen.entries()) {
+		if (group.length > 1) {
+		  group.forEach(r => {
+			r.classList.add('error-line');
+			r.querySelector('.celex').classList.add('conflict');
+			r.querySelector('.subd').classList.add('conflict');
+		  });
+
+		  const rowNums = group.map(r => {
+			const cell = r.querySelector('.row-index');
+			return cell && cell.textContent.trim()
+			  ? parseInt(cell.textContent.trim(), 10)
+			  : Array.from(r.parentNode.children).indexOf(r) + 1;
+		  });
+
+		  issues.push({ rows: rowNums, message: `❌ Rows ${rowNums.join(', ')}: Duplicate CELEX+Subdivision: ${key}` });
+		}
+	  }
+
+
+	  function tokenizeSubd(str) {
+		return str.match(/[A-Za-z]+|\d+/g)?.map(token => isNaN(token) ? token : parseInt(token, 10)) || [];
+	  }
+
+	  function isOverlappingSubd(subdA, subdB) {
+		const suffixes = ['BIS', 'TER', 'QUATER', 'QUINQUIES', 'SEXIES', 'SEPTIES', 'OCTIES', 'NONIES', 'VINGTIÈME'];
+
+		function normalize(s) {
+		  return s.replace(/\./g, '').trim().toUpperCase();
+		}
+
+		const normA = normalize(subdA);
+		const normB = normalize(subdB);
+
+		if (normA === normB) return false;
+
+		// 🔴 Empty subdivision overlaps with any non-empty one
+		if (!normA || !normB) return true;
+
+		// 🔴 Handle suffixes — if one is exactly norm + known suffix → NOT overlapping
+		for (const suffix of suffixes) {
+		  if (normA === normB + suffix || normB === normA + suffix) {
+			return false; // Suffix variants are treated as distinct
+		  }
+		  // 🆕 Also check if one starts with the other + suffix (e.g., A12 vs A12BISP3)
+		  if (normB.startsWith(normA + suffix) || normA.startsWith(normB + suffix)) {
+			return false; // Subdivision belongs to the suffixed variant, not the base
+		  }
+		}
+
+		// Prefix overlap check with digit-boundary safeguard
+		function isPrefixOverlap(shorter, longer) {
+		  if (!longer.startsWith(shorter)) return false;
+
+		  // If shorter ends with a digit and the next char in longer is also a digit,
+		  // we are just continuing the same number (e.g., P1 → P16), so NOT an overlap.
+		  const prev = shorter[shorter.length - 1] || '';
+		  const next = longer[shorter.length] || '';
+		  if (/\d/.test(prev) && /\d/.test(next)) return false;
+
+		  // If the remainder is only digits (e.g., A01 → A011), NOT an overlap.
+		  const remainder = longer.slice(shorter.length);
+		  if (/^\d+$/.test(remainder)) return false;
+
+		  // Otherwise it’s a structural deepening (e.g., P1 → P1L1 or P1A), so overlap.
+		  return true;
+		}
+
+		if (isPrefixOverlap(normA, normB)) return true;
+		if (isPrefixOverlap(normB, normA)) return true;
+
+		return false;
+	  }
+
+	  for (const [key, list] of pointMap.entries()) {
+		const conflictPt = key.split('|')[1];
+		const conflictSet = new Set();
+
+		for (let i = 0; i < list.length; i++) {
+		  for (let j = i + 1; j < list.length; j++) {
+			const a = list[i], b = list[j];
+			if (isOverlappingSubd(a.subd, b.subd)) {
+			  a.row.classList.add('error-line');
+			  b.row.classList.add('error-line');
+
+			  [a.row, b.row].forEach(row => {
+				if (!rowPointHighlights.has(row)) rowPointHighlights.set(row, new Set());
+
+				// 🔶 Mark all hyphenated ranges that include the conflicting point
+				const ptsText = row.querySelector('.points')?.innerText || '';
+				const hyphens = [...ptsText.matchAll(/\b(\d+)\s*-\s*(\d+)\b/g)];
+
+				let matched = false;
+				for (const match of hyphens) {
+				  const start = parseInt(match[1]), end = parseInt(match[2]);
+				  if (conflictPt >= start && conflictPt <= end) {
+					rowPointHighlights.get(row).add(match[0]); // e.g., "1 - 3"
+					matched = true;
+				  }
+				}
+
+				if (!matched) {
+				  rowPointHighlights.get(row).add(conflictPt);
+				}
+
+				// ✅ collect row numbers
+				const cell = row.querySelector('.row-index');
+				const num = cell && cell.textContent.trim()
+				  ? parseInt(cell.textContent.trim(), 10)
+				  : Array.from(row.parentNode.children).indexOf(row) + 1;
+				conflictSet.add(num);
+			  });
+			}
+		  }
+		}
+
+		// after inner loops: emit a single message if any conflict found
+		if (conflictSet.size > 0) {
+		  const nums = [...conflictSet].sort((a,b)=>a-b);
+		  issues.push({ rows: nums, message: `❌ Rows ${nums.join(', ')}: Overlapping subdivisions for point ${conflictPt}` });
+		}
+	  }
+
+
+
+	  for (const [row, pointSet] of rowPointHighlights.entries()) {
+		const cell = row.querySelector('.points');
+		markPointsInCell(cell, pointSet);
+	  }
+
+	  // ===== Sort by first row number & display =====
+	  issues.sort((a, b) => Math.min(...a.rows) - Math.min(...b.rows));
+	  const result = issues.map(i => i.message);
+
+	  document.getElementById('output').innerHTML = result.length
+		? result.join('\n')
+		: '<span class="ok">✔ No issues were found.</span>';
+
+	  makeErrorMessagesClickable();
+	  await annotateCelexCells(); 
+	  attachCelexListeners();
+	  updateRowIndexes();
+	  applyTableFilters();
+	  reorderRows();
+
+	}
+
+  // DOMContentLoaded event listener
+  // Init with one blank row
+    document.addEventListener('DOMContentLoaded', () => {
+	  loadTableFromLocalStorage(); // Try to load saved rows
+	  if (document.querySelectorAll('.scroll-body tbody tr').length === 0) {
+		document.querySelector('.scroll-body tbody').appendChild(createRow());
+		updateRowIndexes();
+	  }
+	 attachCelexListeners();
+	 refreshDuplicateHighlights(); // ✅ first pass
+	 initCelexLookup();
+	 
+	 // Add ECLI checker
+	 const ecliInput = document.getElementById('checkEcli');
+	 if (ecliInput) {
+		 ecliInput.addEventListener('blur', checkEcliForCelex);
+		 ecliInput.addEventListener('keypress', (e) => {
+			 if (e.key === 'Enter') {
+				 checkEcliForCelex();
+			 }
+		 });
+		 
+		 // Clear styling when user starts typing again
+		 ecliInput.addEventListener('input', () => {
+			 if (ecliInput.style.backgroundColor !== '#fff3cd') { // don't clear while checking
+				 ecliInput.style.backgroundColor = '';
+				 ecliInput.style.color = '';
+				 ecliInput.title = 'Check ECLI in Cellar';
+			 }
+		 });
+	 }
+	});  
+
+// FILTERS
+	function applyTableFilters() {
+	  const celexVal = document.getElementById('celexFilter').value.trim().toLowerCase();
+	  const subdVal = document.getElementById('subdFilter').value.trim().toLowerCase();
+	  const pointsVal = document.getElementById('pointsFilter').value.trim();
+
+	  const rows = document.querySelectorAll('.scroll-body tbody tr');
+
+	  rows.forEach(row => {
+	  
+		if (row.dataset.pinned === "true") {
+		  row.style.display = ''; // always visible
+		  return;
+		}
+	  
+		const celex = row.querySelector('.celex')?.innerText.toLowerCase() || '';
+		const subd = row.querySelector('.subd')?.innerText.toLowerCase() || '';
+		const points = row.querySelector('.points')?.innerText || '';
+
+		const matchCelex = celex.includes(celexVal);
+		const matchSubd = subd.includes(subdVal);
+		let matchPoints = true;
+
+			if (pointsVal !== '') {
+			  const queryPoint = parseInt(pointsVal, 10);
+			  matchPoints = false;
+
+			  if (!isNaN(queryPoint)) {
+				// Expand ranges and single digits
+				const nums = new Set();
+
+				// Single numbers
+				const singleMatches = points.match(/\b\d+\b/g) || [];
+				singleMatches.forEach(n => nums.add(parseInt(n)));
+
+				// Ranges
+				const rangeMatches = points.match(/\b(\d+)\s*-\s*(\d+)\b/g) || [];
+				rangeMatches.forEach(r => {
+				  const [start, end] = r.split('-').map(n => parseInt(n.trim()));
+				  if (start <= end) {
+					for (let i = start; i <= end; i++) nums.add(i);
+				  }
+				});
+
+				matchPoints = nums.has(queryPoint);
+			  }
+			}
+
+
+		row.style.display = matchCelex && matchSubd && matchPoints ? '' : 'none';
+	  });
+	}
+
+	['celexFilter', 'subdFilter', 'pointsFilter'].forEach(id => {
+	  const input = document.getElementById(id);
+	  input.addEventListener('input', () => {
+		applyTableFilters();
+
+		if (input.value.trim()) {
+		  input.classList.add('active');
+		} else {
+		  input.classList.remove('active');
+		}
+	  });
+	});
+
+	function clearFilter(id) {
+	  const input = document.getElementById(id);
+	  if (input) {
+		input.value = '';
+		input.classList.remove('active');
+		applyTableFilters();
+	  }
+	}
+
+	function clearAllFilters() {
+	  ['celexFilter', 'subdFilter', 'pointsFilter'].forEach(id => {
+		const input = document.getElementById(id);
+		if (input) {
+		  input.value = '';
+		  input.classList.remove('active'); // Remove green background
+		}
+	  });
+
+	  applyTableFilters();
+	}
+
+// TASK NAME
+	const taskNameInput = document.getElementById('taskName');
+
+	// Load from localStorage on page load
+	document.addEventListener('DOMContentLoaded', () => {
+	  const savedTask = localStorage.getItem('taskName');
+	  if (savedTask) taskNameInput.value = savedTask;
+	});
+
+	// Auto-save on change
+	taskNameInput.addEventListener('input', () => {
+	  localStorage.setItem('taskName', taskNameInput.value);
+	});
+
+// AUTOMATIC SAVE|RESTORE
+	function saveTableToLocalStorage() {
+	  const rows = document.querySelectorAll('.scroll-body tbody tr');
+	  const data = [];
+
+	  rows.forEach(row => {
+		const celex = row.querySelector('.celex')?.innerText.trim() || '';
+		const subd = row.querySelector('.subd')?.innerText.trim() || '';
+		const points = row.querySelector('.points')?.innerText.trim() || '';
+		const pinned = row.dataset.pinned === "true";
+		data.push([celex, subd, points, pinned]);
+	  });
+
+	  localStorage.setItem('checkerTableData', JSON.stringify(data));
+	}
+
+	function loadTableFromLocalStorage() {
+	  const saved = localStorage.getItem('checkerTableData');
+	  if (!saved) return;
+
+	  const rows = JSON.parse(saved);
+	  const body = document.querySelector('.scroll-body tbody');
+	  body.innerHTML = ''; // clear current
+
+	  const fragment = document.createDocumentFragment();
+		rows.forEach(([celex, subd, points, pinned]) => {
+		  const row = createRow(celex, subd, points);
+		  if (pinned) {
+			row.classList.add('pinned-row');
+			row.dataset.pinned = "true";
+			row.querySelector('.pin-cell use')?.setAttribute('href', '#icon-pin-on');
+		  }
+
+		  fragment.appendChild(row);
+		});
+		body.appendChild(fragment);		
+		attachCelexListeners(); // ✅ Fix missing tooltip on restored rows
+		annotateCelexCells();   // ✅ Trigger CELEX validation if Cellar is active
+		updateRowIndexes();
+		reorderRows();
+	}
+
+// EXPORT EXCEL
+	function exportToExcel() {
+	  const rows = document.querySelectorAll('.scroll-body tbody tr');
+	  const taskName = document.getElementById('taskName').value.trim();
+
+	  const data = [['CLASS', 'CIT-JUR vs EUR-Lex', 'list of cit_jur', 'SUBDIVISION', 'SOURCE POINT(S)']];
+
+	  rows.forEach(row => {
+		const celex = row.querySelector('.celex')?.innerText.trim() || '';
+		const subd = row.querySelector('.subd')?.innerText.trim() || '';
+		const points = row.querySelector('.points')?.innerText.trim() || '';
+		const cls = 'CURIA_Analysis_Task <> cit_jur';
+		const task = taskName || '';
+		data.push([cls, task, celex, subd, points]);
+	  });
+
+	  const worksheet = XLSX.utils.aoa_to_sheet(data);
+	  worksheet['!cols'] = [
+		{ wch: 30 },  // CLASS
+		{ wch: 25 },  // CIT-JUR vs EUR-Lex
+		{ wch: 20 },  // CELEX
+		{ wch: 18 },  // SUBDIVISION
+		{ wch: 40 }   // POINTS
+	  ];
+
+	  const workbook = XLSX.utils.book_new();
+	  XLSX.utils.book_append_sheet(workbook, worksheet, 'CheckerData');
+
+	  let filename = taskName;
+	  if (!filename) {
+		filename = prompt('Enter filename for export (without extension):', 'checker_data');
+		if (!filename) return;
+	  }
+	  if (!filename.endsWith('.xlsx')) filename += '.xlsx';
+
+	  XLSX.writeFile(workbook, filename);
+	}
+
+	(function enableResizableTable() {
+	  const container = document.querySelector('.resizable-container');
+	  const scrollBody = container.querySelector('.scroll-body');
+	  const resizer = container.querySelector('.resizer');
+
+	  let isResizing = false;
+	  let startY = 0;
+	  let startHeight = 0;
+
+	  resizer.addEventListener('mousedown', e => {
+		isResizing = true;
+		startY = e.clientY;
+		startHeight = scrollBody.offsetHeight;
+		document.body.style.cursor = 'row-resize';
+		document.body.style.userSelect = 'none';
+	  });
+
+	  document.addEventListener('mousemove', e => {
+		if (!isResizing) return;
+		const newHeight = startHeight + (e.clientY - startY);
+		if (newHeight > 100) {
+		  scrollBody.style.maxHeight = newHeight + 'px';
+		}
+	  });
+
+	  document.addEventListener('mouseup', () => {
+		if (isResizing) {
+		  isResizing = false;
+		  document.body.style.cursor = '';
+		  document.body.style.userSelect = '';
+		}
+	  });
+	})();
+
+// EXPORT ATOM XML
+	function exportToXML() {
+	  const rows = document.querySelectorAll('.scroll-body tbody tr');
+	  let taskName = document.getElementById('taskName').value.trim();
+
+	  if (!taskName) {
+		taskName = prompt('Please enter a Task Name (EUR-Lex act):', '');
+		if (!taskName || !taskName.trim()) {
+		  alert('Export cancelled — Task Name is required for XML export.');
+		  return;
+		}
+		taskName = taskName.trim();
+		document.getElementById('taskName').value = taskName; // Optional: update field
+		localStorage.setItem('taskName', taskName); // Optional: persist it
+	  }
+
+	  const xmlParts = [];
+
+	  xmlParts.push(`<?xml version="1.0" encoding="utf-8"?>`);
+	  xmlParts.push(`<?xml-stylesheet type='text/xsl' href='Transform.xsl'?>`);
+	  xmlParts.push(`<ImportTable>`);
+	  xmlParts.push(`<UseAssocMode />`);
+	  xmlParts.push(`<Head>`);
+	  xmlParts.push(`<Col Name="Class" Code="Class" />`);
+	  xmlParts.push(`<Col Name="EUR-Lex act" Code="Role_201812041536578069" AtomId="102073" AtomTypeId="12" DataTypeId="0" />`);
+	  xmlParts.push(`<Col Name="CJEU case" Code="Role_201812041536578311" AtomId="102074" AtomTypeId="12" DataTypeId="0" />`);
+	  xmlParts.push(`<Col Name="1. Target Subdivision" Code="Variant_201812041521231733" AtomId="102064" AtomTypeId="6" DataTypeId="4" />`);
+	  xmlParts.push(`<Col Name="2. Source point (N)" Code="Variant_201812041522016304" AtomId="102065" AtomTypeId="6" DataTypeId="4" />`);
+	  xmlParts.push(`</Head>`);
+	  xmlParts.push(`<Rows>`);
+
+	  rows.forEach(row => {
+		const celex = row.querySelector('.celex')?.innerText.trim() || '';
+		const subd = row.querySelector('.subd')?.innerText.trim() || '';
+		const points = row.querySelector('.points')?.innerText.trim() || '';
+
+		if (!celex) return;
+
+		xmlParts.push(`<Row>`);
+		xmlParts.push(`<Cell>CURIA_Analysis_Task &lt;&gt; cit_jur</Cell>`);
+		xmlParts.push(`<Cell>${escapeXML(taskName)}</Cell>`);
+		xmlParts.push(`<Cell>${escapeXML(celex)}</Cell>`);
+		xmlParts.push(`<Cell>${escapeXML(subd)}</Cell>`);
+		xmlParts.push(`<Cell>${escapeXML(points)}</Cell>`);
+		xmlParts.push(`</Row>`);
+	  });
+
+	  xmlParts.push(`</Rows>`);
+	  xmlParts.push(`</ImportTable>`);
+
+	  const xmlContent = xmlParts.join('\n');
+	  const blob = new Blob([xmlContent], { type: 'application/xml' });
+
+	  let filename = taskName || 'export';
+	  if (!filename.endsWith('.xml')) filename += '.xml';
+
+	  const a = document.createElement('a');
+	  a.href = URL.createObjectURL(blob);
+	  a.download = filename;
+	  document.body.appendChild(a);
+	  a.click();
+	  document.body.removeChild(a);
+	}
+
+	function escapeXML(str) {
+	  return str
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+		.replace(/"/g, '&quot;')
+		.replace(/'/g, '&apos;');
+	}
+
+// ADD RANGE OF CITATIONS
+	function addRange() {
+	  // Remove existing prompt if present
+	  const oldPrompt = document.getElementById("customPromptBox");
+	  if (oldPrompt) oldPrompt.remove();
+
+	  const promptBox = document.createElement("div");
+	  promptBox.id = "customPromptBox";
+	  promptBox.style.position = "fixed";
+	  promptBox.style.top = "25%";
+	  promptBox.style.left = "50%";
+	  promptBox.style.transform = "translate(-50%, -25%)";
+	  promptBox.style.background = "white";
+	  promptBox.style.border = "2px solid #1b486e";
+	  promptBox.style.borderRadius = "10px";
+	  promptBox.style.padding = "20px";
+	  promptBox.style.boxShadow = "0 5px 15px rgba(0,0,0,0.3)";
+	  promptBox.style.zIndex = "9999";
+	  promptBox.style.fontFamily = "Arial,sans-serif";
+	  promptBox.style.minWidth = "340px";
+
+	  promptBox.innerHTML = `
+		<style>
+		  #submitBtn:hover { background: #286090 !important; }
+		  #cancelBtn:hover { background: #6e6b6b !important; }
+		  input:focus { border: 1px solid #286090 !important; outline: none !important; }
+		</style>
+		
+		<div style="font-size:18px;margin-bottom:20px;color:#286090;">Add Range of Subdivisions</div>
+		
+		<div style="margin-bottom:10px;">
+		  <label style="color:#286090;">CELEX:</label>
+		  <input id="celexInput" style="width:100%;padding:8px;margin-top:5px;font-size:16px;border:1px solid #ccc;border-radius:5px;">
+		</div>
+		
+		<div style="display: flex; gap: 10px; margin-bottom:10px;">
+		  <div style="flex:1;">
+			<label style="color:#286090;">First Subdivision Code</label>
+			<input id="startInput" style="width:100%;padding:8px;margin-top:5px;font-size:16px;border:1px solid #ccc;border-radius:5px;">
+		  </div>
+		  
+		  <div style="flex:1;">
+			<label style="color:#286090;">Last (number only):</label>
+			<input id="endInput" style="width:100%;padding:8px;margin-top:5px;font-size:16px;border:1px solid #ccc;border-radius:5px;">
+		  </div>
+		  
+		</div>
+		
+		<div style="margin-bottom:10px;">
+		  <label style="color:#286090;">Source point:</label>
+		  <input id="pointInput" style="width:100%;padding:8px;margin-top:5px;font-size:16px;border:1px solid #ccc;border-radius:5px;">
+		</div>
+		
+		<div style="margin-top:15px;display:flex;justify-content:flex-end;gap:10px;">
+		  <button id="submitBtn" style="padding:8px 15px;font-size:14px;border:none;background:#337AB7;color:white;border-radius:5px;cursor:pointer;">Add</button>
+		  <button id="cancelBtn" style="padding:8px 15px;font-size:14px;border:none;background:#a3a0a0;color:white;border-radius:5px;cursor:pointer;">Cancel</button>
+		</div>
+	  `;
+
+	  document.body.appendChild(promptBox);
+	  document.getElementById("celexInput").focus();
+
+	  document.getElementById("cancelBtn").onclick = () => promptBox.remove();
+
+	  document.getElementById("submitBtn").onclick = () => {
+		const celex = document.getElementById("celexInput").value.trim();
+		const startCode = document.getElementById("startInput").value.trim();
+		const endNumber = parseInt(document.getElementById("endInput").value.trim(), 10);
+		const point = document.getElementById("pointInput").value.trim();
+
+		if (!celex || !startCode || isNaN(endNumber) || !point) {
+		  alert("Please fill in all fields with valid values.");
+		  return;
+		}
+
+		const match = startCode.match(/^(.*?)(\d+)$/);
+		if (!match) {
+		  alert("Invalid start format — must end in a number (e.g. A01P3 or NPT1LAP2).");
+		  return;
+		}
+
+		const prefix = match[1];
+		const startNumber = parseInt(match[2], 10);
+		if (endNumber < startNumber) {
+		  alert("End must be greater than or equal to start.");
+		  return;
+		}
+
+		const tbody = document.querySelector(".scroll-body tbody");
+		for (let i = startNumber; i <= endNumber; i++) {
+		  const padded = i.toString().padStart(match[2].length, "0");
+		  const newSubd = prefix + padded;
+		  const row = createRow(celex, newSubd, point);
+		  tbody.appendChild(row);
+		}
+		
+		saveTableToLocalStorage();
+		attachCelexListeners();
+		annotateCelexCells();
+		promptBox.remove();
+	  };
+
+	  promptBox.addEventListener("keydown", function (e) {
+		if (e.key === "Enter") document.getElementById("submitBtn").click();
+	  });
+	}
+
+		document.getElementById('incrementFilterBtn').addEventListener('click', () => {
+		  const input = document.getElementById('pointsFilter');
+		  const val = input.value.trim();
+		  const matches = val.match(/\d+/g);
+		  let next = 1;
+
+		  if (matches && matches.length > 0) {
+			const lastNum = parseInt(matches[matches.length - 1], 10);
+			if (!isNaN(lastNum)) next = lastNum + 1;
+		  }
+
+		  input.value = next.toString();
+		  input.classList.add('active');
+		  applyTableFilters();
+		});
+
+		document.getElementById('decrementFilterBtn').addEventListener('click', () => {
+		  const input = document.getElementById('pointsFilter');
+		  const val = input.value.trim();
+		  const matches = val.match(/\d+/g);
+		  let prev = 1;
+
+		  if (matches && matches.length > 0) {
+			const lastNum = parseInt(matches[matches.length - 1], 10);
+			if (!isNaN(lastNum) && lastNum > 1) prev = lastNum - 1;
+		  }
+
+		  input.value = prev.toString();
+		  input.classList.add('active');
+		  applyTableFilters();
+		});
+
+</script>
+ 
+
+<script>
+let cellarChecksEnabled = false;
+
+/// CELEX VALIDATIONS
+	function toggleCellarChecks() {
+	  cellarChecksEnabled = !cellarChecksEnabled;
+	  
+	  localStorage.setItem('cellarChecksEnabled', JSON.stringify(cellarChecksEnabled));
+
+	  // Update SVG icon
+	  const toggleIcon = document.querySelector('#cellarToggleIcon use');
+	  const btn = document.getElementById('cellarSvgToggle');
+
+	  if (cellarChecksEnabled) {
+		toggleIcon.setAttribute('href', '#icon-toggle-on');
+		btn.title = 'Disable Cellar';
+	  } else {
+		toggleIcon.setAttribute('href', '#icon-toggle-off');
+		btn.title = 'Enable Cellar';
+	  }
+	  if (cellarChecksEnabled) annotateCelexCells();
+	}
+	
+	async function annotateCelexCells() {
+	  if (!cellarChecksEnabled) return;
+	  
+	  const rows = document.querySelectorAll('.scroll-body tbody tr');
+	  const cache = JSON.parse(localStorage.getItem("celexCache") || "{}");
+
+	  for (const row of rows) {
+		const celexCell = row.querySelector('.celex');
+		const celex = celexCell?.innerText.trim();
+		if (!celex) continue;
+
+		if (celex in cache) {
+		  if (cache[celex].validated) {
+			const data = typeof cache[celex].tooltip === 'string' ? JSON.parse(cache[celex].tooltip) : cache[celex].tooltip;
+			celexCell.classList.remove('conflict');
+			celexCell.style.color = '#276796'; // blue
+			celexCell.style.fontWeight = '600';
+			celexCell.classList.add('celex-tooltip');
+			celexCell.dataset.validated = "true";
+			celexCell.dataset.tooltip = JSON.stringify(data);
+		  } else {
+			celexCell.classList.add('conflict');
+			celexCell.style.color = 'red';
+			celexCell.style.fontWeight = 'bold';
+			celexCell.dataset.validated = "false";
+		  }
+		  continue;
+		}
+
+		try {
+		  const response = await fetch(`https://celex-validator-backend-production.up.railway.app/validate?celex=${encodeURIComponent(celex)}`);
+		  if (!response.ok) throw new Error("Request failed");
+		  const data = await response.json();
+
+		  if (data.valid) {
+			celexCell.classList.remove('conflict');
+			celexCell.style.color = '#276796';
+			celexCell.style.fontWeight = '600';
+			celexCell.classList.add('celex-tooltip');
+			celexCell.dataset.validated = "true";
+			celexCell.dataset.tooltip = JSON.stringify(data);
+
+			cache[celex] = {
+			  validated: true,
+			  tooltip: data
+			};
+			localStorage.setItem("celexCache", JSON.stringify(cache));
+		  } else {
+			celexCell.classList.add('conflict');
+			celexCell.style.color = 'red';
+			celexCell.style.fontWeight = 'bold';
+			cache[celex] = {
+				validated: false
+			  };
+			  localStorage.setItem("celexCache", JSON.stringify(cache));
+		  }
+		} catch (e) {
+		  celexCell.classList.add('conflict');
+		  celexCell.style.color = 'red';
+		  celexCell.style.fontWeight = 'bold';
+		}
+	  }
+
+	  attachCelexListeners();
+	}
+
+// tooltip
+
+	function showTooltip(cell, celex) {
+	  const cache = JSON.parse(localStorage.getItem("celexCache") || "{}");
+	  if (!(celex in cache)) return;
+
+	  const tooltip = document.getElementById('tooltip-box');
+	  const data = typeof cache[celex].tooltip === 'string'
+		? JSON.parse(cache[celex].tooltip)
+		: cache[celex].tooltip;
+
+	  const ecliPart = data.ecli
+		  ? `<div style="margin-bottom: 6px; font-weight: 700; font-size: 17px;">${data.ecli}</div>`
+		  : '';
+
+		const rawTitle = data.title || '[no title]';
+		const lastHashIndex = rawTitle.lastIndexOf('#');
+
+		const titlePart = lastHashIndex !== -1
+		  ? `<span style="font-weight: 500;">${rawTitle.slice(0, lastHashIndex)}</span><br><span style="font-weight: 500; color: #1b486e;">${rawTitle.slice(lastHashIndex + 1)}</span>
+			`
+		  : `<span style="font-weight: 500;">${rawTitle}</span>`;
+
+	  // ✅ ECLI comes first now
+	  tooltip.innerHTML = `${titlePart}<div style="height: 8px;"></div>${ecliPart}`;
+
+	  tooltip.dataset.celex = celex;
+
+	  const rect = cell.getBoundingClientRect();
+	  tooltip.style.top = `${rect.top + window.scrollY - tooltip.offsetHeight - 14}px`;
+	  tooltip.style.left = `${rect.left + window.scrollX}px`;
+	  tooltip.style.visibility = 'visible';
+	  tooltip.style.opacity = '1';
+	}
+
+	async function celexValidationOnBlur(event) {
+	  if (!cellarChecksEnabled) return;
+	  const celexSpan = event.target;
+	  const celexCell = celexSpan.closest('.celex');
+	  const celex = celexSpan?.innerText.trim();
+
+	  if (!celex) return;
+
+	  // Skip if already validated
+	  if (celexCell.dataset.validated === "true") return;
+
+	  try {
+		const response = await fetch(`https://celex-validator-backend-production.up.railway.app/validate?celex=${encodeURIComponent(celex)}`);
+		if (!response.ok) throw new Error("Request failed");
+		const data = await response.json();
+
+		if (data.valid) {
+		  celexCell.classList.remove('conflict');
+		  celexCell.style.color = '#276796';
+		  celexCell.style.fontWeight = '600';
+		  celexCell.classList.add('celex-tooltip');
+
+		  // ✅ Save metadata only (do NOT inject tooltip DOM)
+		  celexCell.dataset.validated = "true";
+		  celexCell.dataset.tooltip = JSON.stringify(data);
+
+		  let cache = JSON.parse(localStorage.getItem("celexCache") || "{}");
+		  cache[celex] = {
+			validated: true,
+			tooltip: data
+		  };
+		  localStorage.setItem("celexCache", JSON.stringify(cache));
+
+		} else {
+		  celexCell.classList.add('conflict');
+		  celexCell.style.color = 'red';
+		  celexCell.style.fontWeight = 'bold';
+		}
+	  } catch (e) {
+		  celexCell.classList.add('conflict');
+		  celexCell.style.color = 'red';
+		  celexCell.style.fontWeight = 'bold';
+
+		  let cache = JSON.parse(localStorage.getItem("celexCache") || "{}");
+		  cache[celex] = {
+			validated: false
+		  };
+		  localStorage.setItem("celexCache", JSON.stringify(cache));
+		}
+	}
+
+	async function checkEcliForCelex() {
+		const input = document.getElementById('checkEcli');
+		const ecli = input.value.trim();
+		
+		if (!ecli) {
+			input.style.backgroundColor = '';
+			input.style.color = '';
+			return;
+		}
+		
+		// Basic ECLI format validation - support both Court of Justice (C) and General Court (T)
+		if (!/^EU:[CT]:\d{4}:\d+$/.test(ecli)) {
+			input.style.backgroundColor = '#ffe5e5';
+			input.style.color = 'red';
+			input.title = 'Invalid ECLI format (should be EU:C:YYYY:NNN or EU:T:YYYY:NNN)';
+			return;
+		}
+		
+		try {
+			input.style.backgroundColor = '#fff3cd'; // yellow while checking
+			input.style.color = '#856404';
+			input.title = 'Checking...';
+			
+			const response = await fetch(`https://celex-validator-backend-production.up.railway.app/find-celex-by-ecli?ecli=${encodeURIComponent(ecli)}`);
+			if (!response.ok) throw new Error("Request failed");
+			
+			const data = await response.json();
+			
+			if (data.found && data.celex) {
+				// Success - show CELEX in input
+				input.value = data.celex;
+				input.style.backgroundColor = '#d4edda'; // green
+				input.style.color = '#155724';
+				input.title = data.title ? `Found: ${data.title}` : `Found CELEX: ${data.celex}`;
+				
+				// Optional: automatically add to table
+				setTimeout(() => {
+					if (confirm(`Found CELEX: ${data.celex}\n\nAdd to table?`)) {
+						const tbody = document.querySelector('.scroll-body tbody');
+						const newRow = createRow(data.celex, '', '');
+						
+						// Add to top of unpinned rows
+						const firstUnpinnedRow = Array.from(tbody.children).find(row => 
+							row.dataset.pinned !== "true"
+						);
+						
+						if (firstUnpinnedRow) {
+							tbody.insertBefore(newRow, firstUnpinnedRow);
+						} else {
+							tbody.appendChild(newRow);
+						}
+						
+						updateRowIndexes();
+						if (cellarChecksEnabled) annotateCelexCells();
+						saveTableToLocalStorage();
+						
+						// Focus on subdivision cell for quick editing
+						const subdivCell = newRow.querySelector('.subd');
+						if (subdivCell) subdivCell.focus();
+						
+						// Clear the input
+						input.value = '';
+						input.style.backgroundColor = '';
+						input.style.color = '';
+						input.title = 'Check ECLI in Cellar';
+					}
+				}, 100);
+				
+			} else {
+				// Not found
+				input.style.backgroundColor = '#f8d7da'; // light red
+				input.style.color = '#721c24';
+				input.title = 'ECLI not found in Cellar';
+			}
+			
+		} catch (error) {
+			input.style.backgroundColor = '#f8d7da';
+			input.style.color = '#721c24';
+			input.title = 'Error checking ECLI';
+			console.error('ECLI check error:', error);
+		}
+	}
+
+
+// AUTOFILL off
+	document.addEventListener('DOMContentLoaded', () => {
+	  document.querySelectorAll('.filter-input').forEach(input => {
+		input.setAttribute('autocomplete', 'off');
+	  });
+	  
+	  const taskNameInput = document.getElementById('taskName');
+	  if (taskNameInput) {
+		taskNameInput.setAttribute('autocomplete', 'off');
+	  }	  
+	});
+
+	document.addEventListener('DOMContentLoaded', () => {
+	  const storedState = localStorage.getItem('cellarChecksEnabled');
+	  if (storedState === 'true') {
+		cellarChecksEnabled = true;
+
+		const toggleIcon = document.querySelector('#cellarToggleIcon use');
+		const btn = document.getElementById('cellarSvgToggle');
+		toggleIcon.setAttribute('href', '#icon-toggle-on');
+		btn.title = 'Disable Cellar';
+
+		annotateCelexCells(); // Trigger validation if needed
+	  }
+	});
+
+// Methodology LINKS
+	function MethodologyA() {
+		  window.open("https://atom.aionindexing.eu/media/Base/2203/Image380.png", "_blank", "width=800,height=700,noopener");
+		}
+		
+	function MethodologyB() {
+		  window.open("https://atom.aionindexing.eu/media/File/2308/File1327259.pdf", "_blank", "width=1000,height=800,noopener");
+		}	
+
+// Keyboard shortcuts	
+	(function () {
+	  const runValidate = () => { if (typeof validateAll === "function") validateAll(); };
+	  const runClear    = () => { if (typeof clearCheck   === "function") clearCheck(); };
+	  
+	  const handler = (e) => {
+		// let text inputs type freely
+		const t = e.target;
+		if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+		
+		// Just use regular Ctrl (any Ctrl key) + F1/F2
+		if (e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey) {
+		  let hit = null;
+		  if (e.code === "F1") hit = "validate";
+		  if (e.code === "F2") hit = "clear";
+		  
+		  if (hit) {
+			e.preventDefault();
+			e.stopPropagation();
+			e.stopImmediatePropagation?.();
+			if (hit === "validate") runValidate();
+			else runClear();
+		  }
+		}
+	  };
+	  
+	  window.addEventListener("keydown", handler, { capture: true });
+})();
+
+// ESC key to exit contenteditable cells
+	document.addEventListener('keydown', function(e) {
+	  if (e.key === 'Escape' || e.code === 'Escape') {
+		const activeElement = document.activeElement;
+		
+		// Check if we're in a contenteditable element within the table
+		if (activeElement && (
+			activeElement.isContentEditable || 
+			activeElement.classList.contains('celex-text') ||
+			activeElement.classList.contains('subd') ||
+			activeElement.classList.contains('points')
+		)) {
+		  activeElement.blur(); // Remove focus from the cell
+		  e.preventDefault(); // Prevent any default ESC behavior
+		}
+	  }
+	});
+
+// CELEX LOOKUP FEATURE
+	const celexAliases = {
+	  'AARHUS': '22005A0517(01)',
+	  'GDPR': '32016R0679',
+	  'MONTREAL': '22001A0718(01)',
+	  'OMC': '21994A1223(01)',
+	  '21994A1223_omc_wto': '21994A1223(01)',
+	  'RPC': '32012Q0929(01)',
+	  'RPT': '32015Q0423(01)',
+	  'RGPD': '32016R0679',  
+	  'STATUT': '12008E/PRO/03'
+	};
+
+	function initCelexLookup() {
+	  const input = document.getElementById('celexLookup');
+	  const dropdown = document.getElementById('celexDropdown');
+	  
+	  input.addEventListener('input', handleCelexSearch);
+	  input.addEventListener('focus', handleCelexSearch);
+	  input.addEventListener('blur', hideCelexDropdown);
+	  
+	  dropdown.addEventListener('mousedown', e => e.preventDefault());
+	}
+
+	function handleCelexSearch(e) {
+	  const input = e.target;
+	  const dropdown = document.getElementById('celexDropdown');
+	  const query = input.value.toLowerCase().trim();
+	  
+	  if (!query) {
+		hideCelexDropdown();
+		return;
+	  }
+	  
+	  const matches = Object.entries(celexAliases)
+		.filter(([alias, celex]) => 
+		  alias.toLowerCase().includes(query) || 
+		  celex.toLowerCase().includes(query)
+		);
+	  
+	  if (matches.length === 0) {
+		hideCelexDropdown();
+		return;
+	  }
+	  
+	  dropdown.innerHTML = matches
+		.map(([alias, celex]) => `
+		  <div class="celex-option" data-alias="${alias}" data-celex="${celex}">
+			<div>
+			  <span class="celex-alias">${alias}</span>
+			  <br>
+			  <span class="celex-value">${celex}</span>
+			</div>
+			<button class="celex-add-btn" onclick="addCelexFromLookup('${celex}', event)">ADD</button>
+		  </div>
+		`).join('');
+	  
+	  dropdown.style.display = 'block';
+	}
+
+	function hideCelexDropdown() {
+	  setTimeout(() => {
+		const dropdown = document.getElementById('celexDropdown');
+		dropdown.style.display = 'none';
+	  }, 150);
+	}
+
+	function addCelexFromLookup(celex, event) {
+	  event.stopPropagation();
+	  
+	  const tbody = document.querySelector('.scroll-body tbody');
+	  const newRow = createRow(celex, '', '');
+	  
+	  const firstUnpinnedRow = Array.from(tbody.children).find(row => 
+		row.dataset.pinned !== "true"
+	  );
+	  
+	  if (firstUnpinnedRow) {
+		tbody.insertBefore(newRow, firstUnpinnedRow);
+	  } else {
+		tbody.appendChild(newRow);
+	  }
+	  
+	  updateRowIndexes();
+	  
+	  const subdivCell = newRow.querySelector('.subd');
+	  if (subdivCell) {
+		subdivCell.focus();
+	  }
+	  
+	  const lookupInput = document.getElementById('celexLookup');
+	  lookupInput.value = '';
+	  hideCelexDropdown();
+	  
+	  if (cellarChecksEnabled) {
+		annotateCelexCells();
+	  }
+	  
+	  const addBtn = event.target;
+	  const originalText = addBtn.textContent;
+	  addBtn.textContent = '✓';
+	  addBtn.style.background = '#2a8c56';
+	  setTimeout(() => {
+		addBtn.textContent = originalText;
+		addBtn.style.background = '#3cab6e';
+	  }, 800);
+	  
+	  saveTableToLocalStorage();
+	  refreshDuplicateHighlights();
+	}
+	
+	// Make error messages clickable and scroll to rows
+function makeErrorMessagesClickable() {
+  const outputDiv = document.getElementById('output');
+  if (!outputDiv) return;
+  
+  // Find all text nodes and wrap row numbers in clickable spans
+  const processNode = (node) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const text = node.textContent;
+      // Match patterns like "Row 10" or "Rows 10, 11"
+      const rowPattern = /Row(?:s)?\s+([\d,\s]+):/g;
+      
+      if (rowPattern.test(text)) {
+        const span = document.createElement('span');
+        span.innerHTML = text.replace(
+          /Row(s?)\s+([\d,\s]+):/g,
+          (match, plural, numbers) => {
+            const rowNums = numbers.split(',').map(n => n.trim());
+            const firstRow = rowNums[0];
+            return `<span class="clickable-row-ref" data-row="${firstRow}" style="cursor: pointer; text-decoration: underline; color: inherit;">Row${plural} ${numbers}:</span>`;
+          }
+        );
+        node.parentNode.replaceChild(span, node);
+      }
+    } else if (node.nodeType === Node.ELEMENT_NODE && node.tagName !== 'SPAN') {
+      Array.from(node.childNodes).forEach(processNode);
+    }
+  };
+  
+  Array.from(outputDiv.childNodes).forEach(processNode);
+  
+  // Add click handlers
+  outputDiv.querySelectorAll('.clickable-row-ref').forEach(span => {
+    span.addEventListener('click', function() {
+      const rowNum = parseInt(this.dataset.row, 10);
+      scrollToRow(rowNum);
+    });
+  });
+}
+
+function scrollToRow(rowNumber) {
+  const tbody = document.querySelector('.scroll-body tbody');
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  
+  // Find the row with matching index
+  const targetRow = rows.find(row => {
+    const indexCell = row.querySelector('.row-index');
+    return indexCell && parseInt(indexCell.textContent, 10) === rowNumber;
+  });
+  
+  if (targetRow) {
+    // Scroll the row into view
+    targetRow.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    
+    // Add temporary highlight effect
+    targetRow.style.transition = 'background-color 0.3s';
+    const originalBg = targetRow.style.backgroundColor;
+    targetRow.style.backgroundColor = '#ffeb3b'; // Yellow highlight
+    
+    setTimeout(() => {
+      targetRow.style.backgroundColor = originalBg;
+    }, 1500);
+  }
+}
+
+</script>
+
+</body>
+</html>
